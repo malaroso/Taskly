@@ -1,11 +1,11 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import WelcomeScreen from '../src/screens/auth/WelcomeScreen';
-import LoginScreen from '../src/screens/auth/LoginScreen';
-import HomeScreen from '../src/screens/HomeScreen'; // Örnek bir ekran
-import DetailsScreen from '../src/screens/DetailsScreen'; // Örnek bir ekran
-import { useAuth } from '../src/context/AuthContext';
+import WelcomeScreen from '../screens/auth/WelcomeScreen';
+import LoginScreen from '../screens/auth/LoginScreen';
+import HomeScreen from '../screens/HomeScreen'; // Örnek bir ekran
+import DetailsScreen from '../screens/DetailsScreen'; // Örnek bir ekran
+import { useAuth } from '../context/AuthContext';
 const Stack = createStackNavigator();
 
 const AppNavigation = () => {
