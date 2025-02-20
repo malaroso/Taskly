@@ -2,9 +2,7 @@
 export type RootStackParamList = {
   Welcome: undefined;
   Login: undefined;
-  Home: {
-    refresh?: boolean;
-  };
+  Home: undefined;
   Profile: undefined;
   Notifications: undefined;
   TodoList: undefined;
