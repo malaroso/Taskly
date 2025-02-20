@@ -73,7 +73,7 @@ export const AuthProvider = ({children}: any) => {
             
             return {
                 success: false,
-                message: "Giriş başarısız"
+                message: response.data.message || "Giriş başarısız Şifrenizi veya kullanıcı adınızı kontrol ediniz."
             };
 
         } catch (error: any) {
