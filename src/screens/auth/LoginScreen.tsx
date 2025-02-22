@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView, KeyboardAvoidingView, Platform, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView, KeyboardAvoidingView, Platform, Image, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faUser, faLock, faArrowLeft, faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
@@ -18,18 +18,17 @@ const LoginScreen = () => {
     const [alertTitle, setAlertTitle] = useState('');
     const [alertMessage, setAlertMessage] = useState('');
     const [alertStatus, setAlertStatus] = useState<'success' | 'error' | 'pending'>('pending');
-
-
-    
+    const [isLoading, setIsLoading] = useState(false);
 
     const handleLogin = async () => {
+        setIsLoading(true);
         try {
             if (username && password) {
                 const result = await onLogin?.(username, password);
                 
                 if (result?.success) {
-                    //Giriş başarılı ise Home sayfasına yönlendir
-                    navigation.navigate('Home');
+                    //Bişey yapmaya gerek yok burda halihazırda context içerisinde durum güncelleniyor.
+                    //ve bu güncellemeden sonra botomMenu render oluyor.
                     
                 } else {
                     console.log("result mesaj => " ,result?.message);
@@ -49,9 +48,10 @@ const LoginScreen = () => {
             setAlertMessage('Bir hata oluştu');
             setAlertVisible(true);
             setAlertStatus('error');
+        } finally {
+            setIsLoading(false);
         }
     };
-
 
     return (
         <SafeAreaView style={styles.safeArea}>
@@ -97,8 +97,12 @@ const LoginScreen = () => {
                         <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-                        <Text style={styles.loginButtonText}>Login</Text>
+                    <TouchableOpacity style={styles.loginButton} onPress={handleLogin} disabled={isLoading}>
+                        {isLoading ? (
+                            <ActivityIndicator size="small" color="#fff" />
+                        ) : (
+                            <Text style={styles.loginButtonText}>Login</Text>
+                        )}
                     </TouchableOpacity>
 
                     <Text style={styles.orText}>OR</Text>
@@ -119,10 +123,7 @@ const LoginScreen = () => {
                 onClose={() => setAlertVisible(false)}
                 status={alertStatus}
             />
-
         </SafeAreaView>
-
-        
     );
 };
 
@@ -136,7 +137,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: '#f8f8f8',
         padding: 20,
-
     },
     scrollView: {
         flexGrow: 1,
