@@ -43,10 +43,7 @@ export const AuthProvider = ({children}: any) => {
             }
         };
         loadToken();
-
         setLogoutCallback(logout);
-
-
     }, []);
 
     const login = async (username: string, password: string) => {
