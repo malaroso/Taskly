@@ -3,9 +3,10 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import WelcomeScreen from '../screens/auth/WelcomeScreen';
 import LoginScreen from '../screens/auth/LoginScreen';
-import HomeScreen from '../screens/HomeScreen'; // Örnek bir ekran
-import DetailsScreen from '../screens/DetailsScreen'; // Örnek bir ekran
 import { useAuth } from '../context/AuthContext';
+import BottomMenuNavigation from './bottomMenuNavigation';
+import TaskDetailScreen from '../screens/TaskDetailScreen';
+
 const Stack = createStackNavigator();
 
 const AppNavigation = () => {
@@ -21,8 +22,8 @@ const AppNavigation = () => {
                     </>
                 ) : (
                     <>
-                        <Stack.Screen name="Home" component={HomeScreen} />
-                        <Stack.Screen name="Details" component={DetailsScreen} />
+                        <Stack.Screen name="Main" component={BottomMenuNavigation} />
+                        <Stack.Screen name="TaskDetail" component={TaskDetailScreen} />
                     </>
                 )}
             </Stack.Navigator>
