@@ -11,22 +11,17 @@ interface CustomModalProps {
 
 const CustomModal: React.FC<CustomModalProps> = ({ visible, title, message, onConfirm, onCancel }) => {
   return (
-    <Modal
-      transparent={true}
-      animationType="fade"
-      visible={visible}
-      onRequestClose={onCancel}
-    >
+    <Modal transparent={true}  animationType="fade" visible={visible} onRequestClose={onCancel}>
       <View style={styles.overlay}>
         <View style={styles.modalBox}>
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.message}>{message}</Text>
           <View style={styles.buttonContainer}>
             <TouchableOpacity style={styles.cancelButton} onPress={onCancel}>
-              <Text style={styles.buttonText}>İptal</Text>
+              <Text style={styles.buttonText}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.confirmButton} onPress={onConfirm}>
-              <Text style={styles.buttonText}>Evet</Text>
+              <Text style={styles.buttonText}>Yes</Text>
             </TouchableOpacity>
           </View>
         </View>
