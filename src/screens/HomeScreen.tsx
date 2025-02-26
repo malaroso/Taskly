@@ -1,19 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, SafeAreaView, Modal, Image, ScrollView } from 'react-native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faPlus, faTasks, faClipboardCheck, faTimesCircle, faFilter, faChevronRight, faCheckSquare, faBell, faCalendar, faRefresh, faSignOut } from '@fortawesome/free-solid-svg-icons';
+import { faPlus, faTasks, faClipboardCheck, faTimesCircle, faFilter, faChevronRight, faCheckSquare, faBell, faCalendar, faRefresh, faSignOut, faB } from '@fortawesome/free-solid-svg-icons';
 import { getUserTasks } from '../services/taskService';
 import { Task } from '../types/taskTypes';
 import AlertComponent from '../components/AlertComponent';
 import CustomModal from '../components/CustomModal';
 import { useAuth } from '../context/AuthContext';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { getUnreadCount } from '../services/notificationService';
+
+export type RootStackParamList = {
+  TaskDetail: { taskID: number };
+  Notification: undefined;
+  // ... diğer ekranlar gerekirse eklenir
+};
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const HomeScreen = () => {
     const [filter, setFilter] = useState('All Tasks');
     const [modalVisible, setModalVisible] = useState(false);
     const [tasks, setTasks] = useState<Task[]>([]);
     const [logoutModalVisible, setLogoutModalVisible] = useState(false);
-
+    const [unreadCount, setUnreadCount] = useState(0);
+    const navigation = useNavigation<NavigationProp>();
     const { onLogout } = useAuth();
 
     useEffect(() => {
@@ -38,6 +50,21 @@ const HomeScreen = () => {
 
         fetchTasks();
     }, []);
+
+    useEffect(() => {
+        fetchUnreadCount();
+    }, []);
+
+    const fetchUnreadCount = async () => {
+        try {
+            const response = await getUnreadCount();
+            if (response.status) {
+                setUnreadCount(response.count);
+            }
+        } catch (error) {
+            console.error('Error fetching unread count:', error);
+        }
+    };
 
     const filteredTasks = filter === 'All Tasks' ? tasks : tasks.filter(task => {
         switch (filter) {
@@ -75,19 +102,21 @@ const HomeScreen = () => {
       }
 
       return (
-        <View style={styles.taskContainer}>
-          <FontAwesomeIcon icon={iconName} size={20} color="#666" style={styles.taskIcon} />
-          <View style={styles.taskInfo}>
-            <Text style={styles.taskTitle}>{item.title}</Text>
-            <Text style={styles.taskDescription}>{item.description}</Text>
+        <TouchableOpacity onPress={() => navigation.navigate('TaskDetail', { taskID: item.task_id })}>
+          <View style={styles.taskContainer}>
+            <FontAwesomeIcon icon={iconName} size={20} color="#666" style={styles.taskIcon} />
+            <View style={styles.taskInfo}>
+              <Text style={styles.taskTitle}>{item.title}</Text>
+              <Text style={styles.taskDescription}>{item.description}</Text>
+            </View>
+            <View style={styles.taskUsers}>
+              {item.other_user_images.slice(0, 3).map((user: string, index: number) => (
+                <Image key={index} source={{ uri: user }} style={[styles.userAvatar, { left: index * -12 }]} />
+              ))}
+            </View>
+            <FontAwesomeIcon icon={faChevronRight} size={20} color="#666" />
           </View>
-          <View style={styles.taskUsers}>
-            {item.other_user_images.slice(0, 3).map((user: string, index: number) => (
-              <Image key={index} source={{ uri: user }} style={[styles.userAvatar, { left: index * -12 }]} />
-            ))}
-          </View>
-          <FontAwesomeIcon icon={faChevronRight} size={20} color="#666" />
-        </View>
+        </TouchableOpacity>
       );
     };
 
@@ -105,9 +134,24 @@ const HomeScreen = () => {
                   <FontAwesomeIcon icon={faCalendar} size={24} color="#333" />
                   <Text style={styles.date}>Jun 20, 2020</Text>
                 </View>
-                <TouchableOpacity onPress={handleLogout}> 
-                  <FontAwesomeIcon icon={faSignOut} size={24} color="#333" />
-                </TouchableOpacity>
+                <View style={styles.headerRight}>
+                  <TouchableOpacity 
+                    style={styles.notificationButton} 
+                    onPress={() => navigation.navigate('Notification')}
+                  >
+                    <FontAwesomeIcon icon={faBell} size={24} color="#333" />
+                    {unreadCount > 0 && (
+                      <View style={styles.badge}>
+                        <Text style={styles.badgeText}>
+                          {unreadCount > 99 ? '99+' : unreadCount}
+                        </Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={handleLogout}> 
+                    <FontAwesomeIcon icon={faSignOut} size={24} color="#333" />
+                  </TouchableOpacity>
+                </View>
               </View>
               <Text style={styles.title}>Today</Text>
               <View style={styles.cardContainer}>
@@ -140,12 +184,12 @@ const HomeScreen = () => {
 
             <View style={styles.tasksArea}>
               <View style={styles.taskHeader}>
-                  <TouchableOpacity style={styles.addTaskButton}>
+                  {/* <TouchableOpacity style={styles.addTaskButton}>
                     <Text style={styles.addTask}>Add Task</Text>
                     <View style={styles.addTaskIcon}>
                       <FontAwesomeIcon icon={faPlus} size={18}  color="#FFF" />
                     </View>
-                  </TouchableOpacity>
+                  </TouchableOpacity> */}
                   <TouchableOpacity style={styles.filterButton} onPress={() => setModalVisible(true)}>
                     <Text style={styles.filterText}>{filter}</Text>
                     <FontAwesomeIcon icon={faFilter} size={18} color="#FFF" />
@@ -161,23 +205,11 @@ const HomeScreen = () => {
           <View style={styles.clearArea} />
         </ScrollView>
 
-        <Modal
-          animationType="slide"
-          transparent={true}
-          visible={modalVisible}
-          onRequestClose={() => setModalVisible(false)}
-        >
+        <Modal animationType="slide" transparent={true} visible={modalVisible} onRequestClose={() => setModalVisible(false)}>
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
               {['All Tasks', 'Ongoing', 'In Process', 'Complete', 'Cancel'].map(status => (
-                <TouchableOpacity
-                  key={status}
-                  style={styles.modalButton}
-                  onPress={() => {
-                    setFilter(status);
-                    setModalVisible(false);
-                  }}
-                >
+                <TouchableOpacity  key={status}  style={styles.modalButton} onPress={() => { setFilter(status); setModalVisible(false); }}>
                   <Text style={styles.modalButtonText}>{status}</Text>
                 </TouchableOpacity>
               ))}
@@ -185,17 +217,14 @@ const HomeScreen = () => {
           </View>
         </Modal>
 
-        <CustomModal
-          visible={logoutModalVisible}
-          title="Çıkış Yap"
-          message="Çıkmak ister misiniz?"
-          onConfirm={() => {
-            setLogoutModalVisible(false);
-            onLogout();
-          }}
-          onCancel={() => setLogoutModalVisible(false)}
+        <CustomModal visible={logoutModalVisible} title="Logout" message="Are you sure you want to logout?"
+            onConfirm={() => {
+                setLogoutModalVisible(false);
+                onLogout?.();
+            }}
+            onCancel={() => setLogoutModalVisible(false)} 
         />
-
+       
       </SafeAreaView>
     );
 };
@@ -270,7 +299,7 @@ const styles = StyleSheet.create({
     },
     taskHeader: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
+        justifyContent: 'flex-end',
         alignItems: 'center',
         marginBottom: 10,
     },
@@ -421,7 +450,32 @@ const styles = StyleSheet.create({
   },
   clearArea:{
     height: 100,
-  }
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 15,
+  },
+  notificationButton: {
+    position: 'relative',
+  },
+  badge: {
+    position: 'absolute',
+    right: -6,
+    top: -6,
+    backgroundColor: '#FF6B6B',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontFamily: 'Montserrat-Bold',
+  },
 });
 
 export default HomeScreen;
