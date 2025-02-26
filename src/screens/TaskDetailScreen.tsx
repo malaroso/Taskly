@@ -5,7 +5,7 @@ import { getTaskDetail, getTaskAttachments, getTaskComments } from '../services/
 import { TaskDetail, TaskComment } from '../types/taskTypes';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { useNavigation } from '@react-navigation/native';
-import { faArrowLeft, faShareAlt, faComment, faListDots, faMagnifyingGlass, faCalendar, faClock, faEdit, faFile, faDownload } from '@fortawesome/free-solid-svg-icons';
+import { faArrowLeft, faShareAlt, faComment, faListDots, faAdd, faCalendar, faClock, faEdit, faFile, faDownload } from '@fortawesome/free-solid-svg-icons';
 
 type TaskDetailScreenRouteProp = RouteProp<{ params: { taskID: number } }, 'params'>;
 
@@ -276,8 +276,8 @@ const TaskDetailScreen = () => {
                         <FontAwesomeIcon icon={faArrowLeft} size={24} color="#000" />
                     </TouchableOpacity>
                     <View style={styles.buttonContainer}>
-                        <FontAwesomeIcon icon={faMagnifyingGlass} size={24} color="#000" />
-                        <FontAwesomeIcon icon={faListDots} size={24} color="#000" />
+                        <FontAwesomeIcon icon={faAdd} size={24} color="#000" />
+                        <FontAwesomeIcon icon={faEdit} size={24} color="#000" />
                     </View>
                 </View>
 
@@ -401,6 +401,7 @@ const TaskDetailScreen = () => {
                         {activeTab === 'attachments' ? renderAttachments() : renderComments()}
                     </View>
                 </View>
+                <View style={styles.clear}></View>
             </ScrollView>
         </SafeAreaView>
     );
@@ -656,6 +657,9 @@ const styles = StyleSheet.create({
         fontFamily: 'Montserrat-Regular',
         lineHeight: 20,
     },
+    clear:{
+        height: 80,
+    }
 });
 
 export default TaskDetailScreen; 

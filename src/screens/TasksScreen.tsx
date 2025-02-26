@@ -5,10 +5,18 @@ import { faCalendar, faSearch, faBars, faCircle } from '@fortawesome/free-solid-
 import { getUserTasks } from '../services/taskService';
 import { Task } from '../types/taskTypes';
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
+type RootStackParamList = {
+    TaskDetail: { taskID: number };
+    // ... diğer ekranlar gerekirse eklenir
+};
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const TasksScreen = () => {
     const [tasks, setTasks] = useState<Task[]>([]);
-    const navigation = useNavigation();
+    const navigation = useNavigation<NavigationProp>();
 
     useEffect(() => {
         const fetchTasks = async () => {
