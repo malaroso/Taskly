@@ -6,7 +6,7 @@ export interface Task {
   priority: string;
   created_at: string;
   updated_at: string;
-  other_user_images: string; // JSON string olarak geliyor
+  other_user_images: string[]; // string yerine string array
 }
 
 export interface TaskDetail {
