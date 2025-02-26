@@ -2,12 +2,12 @@ import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, Image, TouchableOpacity, ScrollView } from 'react-native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faLock, faQuestionCircle, faSignOut, faChevronRight, faTasks, faUser, faBell, faHistory, faPalette, faInfoCircle } from '@fortawesome/free-solid-svg-icons';
-import { useAuth } from '../context/AuthContext';
-import CustomModal from '../components/CustomModal';
-import { getUserDetail } from '../services/userService';
-import { UserDetailData } from '../types/userTypes';
+import { useAuth } from '../../context/AuthContext';
+import CustomModal from '../../components/CustomModal';
+import { getUserDetail } from '../../services/userService';
+import { UserDetailData } from '../../types/userTypes';
 import { useNavigation } from '@react-navigation/native';
-import { RootStackParamList } from '../types/navigation';
+import { RootStackParamList } from '../../types/navigation';
 
 
 const ProfileScreen = () => {
@@ -49,7 +49,7 @@ const ProfileScreen = () => {
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
                 <View style={styles.headerTitleContainer}>
-                    <Image source={require('../../assets/images/taskyl-logo-unbg.png')} style={styles.logo} />
+                    <Image source={require('../../../assets/images/taskyl-logo-unbg.png')} style={styles.logo} />
                     <View>
                         <Text style={styles.headerTitle}>Taskly</Text>
                         <Text style={styles.headerTitleSub}>Profile - Page</Text>
