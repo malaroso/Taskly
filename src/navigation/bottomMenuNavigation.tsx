@@ -6,7 +6,7 @@ import { IconProp } from '@fortawesome/fontawesome-svg-core';
 import { faList, faFile, faPlus, faPaperPlane, faUser } from '@fortawesome/free-solid-svg-icons';
 import HomeScreen from '../screens/HomeScreen';
 import TasksScreen from '../screens/TasksScreen';
-
+import ProfileScreen from '../screens/ProfileScreen';
 const Tab = createBottomTabNavigator();
 
 const CustomTabBarButton = ({ children, onPress }: { children: React.ReactNode, onPress: () => void }) => (
@@ -60,7 +60,7 @@ const BottomMenuNavigation = () => {
         }}
       />
       <Tab.Screen name="Chat" component={TasksScreen} />
-      <Tab.Screen name="Profile" component={TasksScreen} />
+      <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
 };
