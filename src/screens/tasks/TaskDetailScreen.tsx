@@ -1,85 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Image, ActivityIndicator, SafeAreaView, ScrollView, FlatList, TouchableOpacity } from 'react-native';
 import { RouteProp, useRoute } from '@react-navigation/native';
-import { getTaskDetail, getTaskAttachments, getTaskComments } from '../services/taskService';
-import { TaskDetail, TaskComment } from '../types/taskTypes';
+import { getTaskDetail, getTaskAttachments, getTaskComments } from '../../services/taskService';
+import { TaskDetail, TaskComment, TaskAttachment } from '../../types/taskTypes';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { useNavigation } from '@react-navigation/native';
 import { faArrowLeft, faShareAlt, faComment, faListDots, faAdd, faCalendar, faClock, faEdit, faFile, faDownload } from '@fortawesome/free-solid-svg-icons';
+import {getStatusColor , getPriorityColor, getStatusText, getPriorityText, formatDate} from '../../utils/taskHelpers';
+import { renderAttachments, renderComments } from '../../components/TaskDetailComponents';
 
 type TaskDetailScreenRouteProp = RouteProp<{ params: { taskID: number } }, 'params'>;
 
-const getStatusColor = (status: string) => {
-    switch (status) {
-        case 'in_progress':
-            return '#4ECDC4';  // Turkuaz
-        case 'completed':
-            return '#59CD90';  // Yeşil
-        case 'pending':
-            return '#FFB01F';  // Turuncu
-        default:
-            return '#FF6B6B';  // Kırmızı
-    }
-};
-
-const getPriorityColor = (priority: string) => {
-    switch (priority) {
-        case 'low':
-            return '#4ECDC4';  // Turkuaz
-        case 'medium':
-            return '#FFB01F';  // Turuncu
-        case 'high':
-            return '#FF6B6B';  // Kırmızı
-        default:
-            return '#666';
-    }
-};
-
-const getStatusText = (status: string) => {
-    switch (status) {
-        case 'in_progress':
-            return 'In Progress';
-        case 'completed':
-            return 'Completed';
-        case 'pending':
-            return 'Pending';
-        default:
-            return status;
-    }
-};
-
-const getPriorityText = (priority: string) => {
-    switch (priority) {
-        case 'low':
-            return 'Low';
-        case 'medium':
-            return 'Medium';
-        case 'high':
-            return 'High';
-        default:
-            return priority;
-    }
-};
-
-const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('tr-TR', {
-        day: '2-digit',
-        month: 'long',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
-};
-
-const isImageFile = (filePath: string) => {
-    if (filePath.includes('encrypted-tbn0.gstatic.com')) {
-        return true;
-    }
-    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
-    const extension = filePath.toLowerCase().substring(filePath.lastIndexOf('.'));
-    return imageExtensions.includes(extension);
-};
 
 const TaskDetailScreen = () => {
     const route = useRoute<TaskDetailScreenRouteProp>();
@@ -165,108 +96,6 @@ const TaskDetailScreen = () => {
         image: user.profile_image,
         username: user.username
     }));
-
-    const renderAttachments = () => {
-        if (loadingAttachments) {
-            return (
-                <View style={styles.placeholderContent}>
-                    <ActivityIndicator color="#4ECDC4" />
-                </View>
-            );
-        }
-
-        if (attachments.length === 0) {
-            return (
-                <View style={styles.placeholderContent}>
-                    <Text style={styles.placeholderText}>No attachments yet</Text>
-                </View>
-            );
-        }
-
-        return (
-            <FlatList
-                data={attachments}
-                keyExtractor={(item, index) => `${item.file_path}-${index}`}
-                renderItem={({ item }) => (
-                    <View style={styles.attachmentItem}>
-                        {isImageFile(item.file_path) ? (
-                            <Image 
-                                source={{ uri: item.file_path }} 
-                                style={styles.attachmentImage}
-                                resizeMode="contain"
-                            />
-                        ) : (
-                            <View style={styles.attachmentHeader}>
-                                <FontAwesomeIcon icon={faFile} size={20} color="#4ECDC4" />
-                                <Text style={styles.fileName}>
-                                    {item.file_path.split('/').pop()}
-                                </Text>
-                            </View>
-                        )}
-                        <View style={styles.attachmentContent}>
-                            <Text style={styles.attachmentDescription}>{item.description}</Text>
-                            <View style={styles.attachmentFooter}>
-                                <Text style={styles.uploadInfo}>
-                                    Uploaded by {item.uploaded_by_name}
-                                </Text>
-                                <Text style={styles.uploadDate}>
-                                    {formatDate(item.created_at)}
-                                </Text>
-                            </View>
-                        </View>
-                    </View>
-                )}
-                contentContainerStyle={styles.attachmentsList}
-                showsVerticalScrollIndicator={false}
-                ItemSeparatorComponent={() => <View style={{ height: 15 }} />}
-            />
-        );
-    };
-
-    const renderComments = () => {
-        if (loadingComments) {
-            return (
-                <View style={styles.placeholderContent}>
-                    <ActivityIndicator color="#4ECDC4" />
-                </View>
-            );
-        }
-
-        if (comments.length === 0) {
-            return (
-                <View style={styles.placeholderContent}>
-                    <Text style={styles.placeholderText}>No comments yet</Text>
-                </View>
-            );
-        }
-
-        return (
-            <FlatList
-                data={comments}
-                keyExtractor={(item, index) => `${item.user_id}-${index}`}
-                renderItem={({ item }) => (
-                    <View style={styles.commentItem}>
-                        <View style={styles.commentHeader}>
-                            <Image 
-                                source={{ uri: item.user_profile_image }} 
-                                style={styles.commentUserImage} 
-                            />
-                            <View style={styles.commentUserInfo}>
-                                <Text style={styles.commentUserName}>{item.user_name}</Text>
-                                <Text style={styles.commentDate}>
-                                    {formatDate(item.created_at)}
-                                </Text>
-                            </View>
-                        </View>
-                        <Text style={styles.commentText}>{item.comment}</Text>
-                    </View>
-                )}
-                contentContainerStyle={styles.commentsList}
-                showsVerticalScrollIndicator={false}
-                ItemSeparatorComponent={() => <View style={{ height: 15 }} />}
-            />
-        );
-    };
 
     return (
         <SafeAreaView style={styles.container}>
@@ -398,7 +227,7 @@ const TaskDetailScreen = () => {
                     </View>
 
                     <View style={styles.tabContent}>
-                        {activeTab === 'attachments' ? renderAttachments() : renderComments()}
+                        {activeTab === 'attachments' ? renderAttachments(attachments, loadingAttachments) : renderComments(comments, loadingComments)}
                     </View>
                 </View>
                 <View style={styles.clear}></View>
@@ -560,103 +389,8 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         minHeight: 200,
     },
-    placeholderContent: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 20,
-    },
-    placeholderText: {
-        fontSize: 14,
-        color: '#666',
-        fontFamily: 'Montserrat-Regular',
-    },
-    attachmentsList: {
-        padding: 15,
-    },
-    attachmentItem: {
-        backgroundColor: '#fff',
-        borderRadius: 12,
-        overflow: 'hidden',
-    },
-    attachmentImage: {
-        width: '100%',
-        height: 200,
-        backgroundColor: '#f8f8f8',
-    },
-    attachmentContent: {
-        padding: 15,
-    },
-    attachmentDescription: {
-        fontSize: 14,
-        color: '#000',
-        marginBottom: 10,
-        fontFamily: 'Montserrat-Regular',
-    },
-    attachmentFooter: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
-    uploadInfo: {
-        fontSize: 12,
-        color: '#666',
-        fontFamily: 'Montserrat-Regular',
-    },
-    uploadDate: {
-        fontSize: 12,
-        color: '#666',
-        fontFamily: 'Montserrat-Regular',
-    },
-    attachmentHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-        marginBottom: 5,
-    },
-    fileName: {
-        fontSize: 14,
-        fontFamily: 'Montserrat-Medium',
-        color: '#000',
-    },
-    commentsList: {
-        padding: 15,
-    },
-    commentItem: {
-        backgroundColor: '#fff',
-        borderRadius: 12,
-        padding: 15,
-    },
-    commentHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 10,
-    },
-    commentUserImage: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        marginRight: 10,
-    },
-    commentUserInfo: {
-        flex: 1,
-    },
-    commentUserName: {
-        fontSize: 14,
-        fontFamily: 'Montserrat-Medium',
-        color: '#000',
-    },
-    commentDate: {
-        fontSize: 12,
-        color: '#666',
-        fontFamily: 'Montserrat-Regular',
-    },
-    commentText: {
-        fontSize: 14,
-        color: '#333',
-        fontFamily: 'Montserrat-Regular',
-        lineHeight: 20,
-    },
+
+
     clear:{
         height: 80,
     }
