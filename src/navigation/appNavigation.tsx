@@ -6,6 +6,10 @@ import LoginScreen from '../screens/auth/LoginScreen';
 import { useAuth } from '../context/AuthContext';
 import BottomMenuNavigation from './bottomMenuNavigation';
 import TaskDetailScreen from '../screens/TaskDetailScreen';
+import NotificationScreen from '../screens/NotificationScreen';
+import AboutAppScreen from '../screens/profile/AboutAppScreen';
+import FAQScreen from '../screens/profile/FAQScreen';
+
 
 const Stack = createStackNavigator();
 
@@ -24,6 +28,9 @@ const AppNavigation = () => {
                     <>
                         <Stack.Screen name="Main" component={BottomMenuNavigation} />
                         <Stack.Screen name="TaskDetail" component={TaskDetailScreen} />
+                        <Stack.Screen name="Notification" component={NotificationScreen} />
+                        <Stack.Screen name="AboutApp" component={AboutAppScreen} />
+                        <Stack.Screen name="FAQ" component={FAQScreen} />
                     </>
                 )}
             </Stack.Navigator>
