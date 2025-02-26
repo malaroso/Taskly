@@ -5,8 +5,11 @@ import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { IconProp } from '@fortawesome/fontawesome-svg-core';
 import { faList, faFile, faPlus, faPaperPlane, faUser } from '@fortawesome/free-solid-svg-icons';
 import HomeScreen from '../screens/HomeScreen';
-import TasksScreen from '../screens/TasksScreen';
-import ProfileScreen from '../screens/ProfileScreen';
+import TasksScreen from '../screens/tasks/TasksScreen';
+import ProfileScreen from '../screens/profile/ProfileScreen';
+import AddTaskScreen from '../screens/tasks/AddTaskScreen';
+
+
 const Tab = createBottomTabNavigator();
 
 const CustomTabBarButton = ({ children, onPress }: { children: React.ReactNode, onPress: () => void }) => (
@@ -50,7 +53,7 @@ const BottomMenuNavigation = () => {
       <Tab.Screen name="Tasks" component={TasksScreen} />
       <Tab.Screen
         name="Add"
-        component={TasksScreen}
+        component={AddTaskScreen  }
         options={{
           tabBarButton: (props) => (
             <CustomTabBarButton {...props}>

@@ -5,7 +5,7 @@ import WelcomeScreen from '../screens/auth/WelcomeScreen';
 import LoginScreen from '../screens/auth/LoginScreen';
 import { useAuth } from '../context/AuthContext';
 import BottomMenuNavigation from './bottomMenuNavigation';
-import TaskDetailScreen from '../screens/TaskDetailScreen';
+import TaskDetailScreen from '../screens/tasks/TaskDetailScreen';
 import NotificationScreen from '../screens/NotificationScreen';
 import AboutAppScreen from '../screens/profile/AboutAppScreen';
 import FAQScreen from '../screens/profile/FAQScreen';
