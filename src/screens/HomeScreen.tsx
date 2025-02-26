@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, SafeAreaView, Modal, Image, ScrollView } from 'react-native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faPlus, faTasks, faClipboardCheck, faTimesCircle, faFilter, faChevronRight, faCheckSquare, faBell, faCalendar, faRefresh, faSignOut, faB } from '@fortawesome/free-solid-svg-icons';
@@ -28,32 +28,30 @@ const HomeScreen = () => {
     const navigation = useNavigation<NavigationProp>();
     const { onLogout } = useAuth();
 
-    useEffect(() => {
-        const fetchTasks = async () => {
-            try {
-                const response = await getUserTasks();
-                if (response.status) {
-                    setTasks(response.data);
-                    console.log(response.data);
+    useFocusEffect(
+        useCallback(() => {
+            const fetchTasks = async () => {
+                try {
+                    const response = await getUserTasks();
+                    if (response.status) {
+                        setTasks(response.data);
+                    }
+                } catch (error) {
+                    console.error('Error fetching tasks:', error);
+                    AlertComponent({
+                        title: 'Error',
+                        message: 'Error fetching tasks',
+                        status: 'error',
+                        visible: true,
+                        onClose: () => {},
+                    });
                 }
-            } catch (error) {
-                console.error('Error fetching tasks:', error);
-                AlertComponent({
-                    title: 'Error',
-                    message: 'Error fetching tasks',
-                    status: 'error',
-                    visible: true,
-                    onClose: () => {},
-                });
-            }
-        };
+            };
 
-        fetchTasks();
-    }, []);
-
-    useEffect(() => {
-        fetchUnreadCount();
-    }, []);
+            fetchTasks();
+            fetchUnreadCount();
+        }, [])
+    );
 
     const fetchUnreadCount = async () => {
         try {
