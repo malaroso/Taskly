@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, SafeAreaView, Image } from 'react-native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faCalendar, faSearch, faBars, faCircle } from '@fortawesome/free-solid-svg-icons';
-import { getUserTasks } from '../services/taskService';
-import { Task } from '../types/taskTypes';
-import { useNavigation } from '@react-navigation/native';
+import { getUserTasks } from '../../services/taskService';
+import { Task } from '../../types/taskTypes';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 type RootStackParamList = {
@@ -18,20 +18,22 @@ const TasksScreen = () => {
     const [tasks, setTasks] = useState<Task[]>([]);
     const navigation = useNavigation<NavigationProp>();
 
-    useEffect(() => {
-        const fetchTasks = async () => {
-            try {
-                const response = await getUserTasks();
-                if (response.status) {
-                    setTasks(response.data);
+    useFocusEffect(
+        useCallback(() => {
+            const fetchTasks = async () => {
+                try {
+                    const response = await getUserTasks();
+                    if (response.status) {
+                        setTasks(response.data);
+                    }
+                } catch (error) {
+                    console.error('Error fetching tasks:', error);
                 }
-            } catch (error) {
-                console.error('Error fetching tasks:', error);
-            }
-        };
+            };
 
-        fetchTasks();
-    }, []);
+            fetchTasks();
+        }, [])
+    );
 
     const getPriorityColor = (priority: string) => {
         switch (priority) {
@@ -74,7 +76,7 @@ const TasksScreen = () => {
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
                 <View style={styles.headerTitleContainer}>
-                    <Image source={require('../../assets/images/taskyl-logo-unbg.png')} style={styles.logo} />
+                    <Image source={require('../../../assets/images/taskyl-logo-unbg.png')} style={styles.logo} />
                     <View>
                         <Text style={styles.headerTitle}>Taskly</Text>
                         <Text style={styles.headerTitleSub}>Tasks - Page</Text>
@@ -91,12 +93,15 @@ const TasksScreen = () => {
             </View>
 
             <FlatList
-                style={{ margin: 20 }}
+                style={{ margin: 20, marginBottom: 80 }}
                 data={tasks}
                 renderItem={renderTask}
                 keyExtractor={item => item.task_id.toString()}
+                showsVerticalScrollIndicator={false}
             />
+ 
         </SafeAreaView>
+        
     );
 };
 
@@ -185,6 +190,9 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: '#666',
     },
+    clear:{
+        height: 100,
+    }
 });
 
 export default TasksScreen; 
