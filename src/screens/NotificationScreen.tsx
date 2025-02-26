@@ -94,11 +94,8 @@ const NotificationScreen = () => {
                 style={[styles.readIndicator, { backgroundColor: item.is_read ? '#4ECDC4' : '#FF6B6B' }]}
                 onPress={() => !item.is_read && handleMarkAsRead(item.notification_id)}
             >
-                <FontAwesomeIcon 
-                    icon={item.is_read ? faCheckCircle : faCircle} 
-                    size={16} 
-                    color="#fff" 
-                />
+                <FontAwesomeIcon  icon={item.is_read ? faCheckCircle : faCircle}  size={16}  color="#fff" />
+
             </TouchableOpacity>
             <View style={styles.notificationContent}>
                 <View style={styles.notificationHeader}>
