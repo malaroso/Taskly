@@ -29,4 +29,19 @@ export const getTaskComments = async (taskID: number): Promise<TaskCommentsRespo
         console.error('Error fetching task comments:', error);
         throw error;
     }
+};
+
+export const addTask = async (formData: any) => {
+    try {
+        const response = await axiosInstance.post('/addTask', formData, {
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        return response.data;
+    } catch (error) {
+        console.error('Error creating task:', error);
+        throw error;
+    }
 }; 

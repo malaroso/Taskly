@@ -9,4 +9,21 @@ export const getUserDetail = async (): Promise<UserDetail> => {
         console.error('Error fetching user detail:', error);
         throw error;
     }
+};
+
+interface User {
+    id: number;
+    name: string;
+    email: string;
+    profile_image: string;
+}
+
+interface UsersResponse {
+    status: boolean;
+    data: User[];
+}
+
+export const getAllUsers = async (): Promise<UsersResponse> => {
+    const response = await axiosInstance.get<UsersResponse>('/getAllUsers');
+    return response.data;
 }; 
