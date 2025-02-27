@@ -18,13 +18,13 @@ const ProfileScreen = () => {
 
     const userMenuItems = [
         { icon: faUser, title: 'My Profile' },
-        { icon: faTasks, title: 'My Tasks' },
+        { icon: faTasks, title: 'My Tasks' , route: 'Tasks'},
         { icon: faBell, title: 'Notifications', route: 'Notification' },
         { icon: faHistory, title: 'Activity History' },
     ];
     
     const menuItems = [
-        { icon: faLock, title: 'Password settings' },
+        { icon: faLock, title: 'Password settings', route: 'PasswordSettings' },
         { icon: faPalette, title: 'Theme' },
         { icon: faQuestionCircle, title: 'FAQ/Support', route: 'FAQ' },
         { icon: faInfoCircle, title: 'About App', route: 'AboutApp' },
