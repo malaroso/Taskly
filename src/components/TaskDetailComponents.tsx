@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, FlatList, Image, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, FlatList, Image, ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faFile } from '@fortawesome/free-solid-svg-icons';
+import { faFile, faEdit, faTrash, faDownload } from '@fortawesome/free-solid-svg-icons';
 import { formatDate } from '../utils/taskHelpers';
+import { useAuth } from '../context/AuthContext';
 
 const isImageFile = (filePath: string) => {
     const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
@@ -67,50 +68,80 @@ export const renderAttachments = (attachments: any[], loadingAttachments: boolea
     );
 };
 
-export const renderComments = (comments: any[], loadingComments: boolean) => {
-    if (loadingComments) {
-        return (
-            <View style={styles.placeholderContent}>
-                <ActivityIndicator color="#4ECDC4" />
-            </View>
-        );
+export const renderComments = (
+    comments: any[], 
+    loading: boolean,
+    onEditComment?: (commentId: number, currentComment: string) => void,
+    onDeleteComment?: (commentId: number) => void
+) => {
+    const { authState } = useAuth();
+    const currentUserId = authState?.userId;
+   
+
+    if (loading) {
+        return <ActivityIndicator size="large" color="#4ECDC4" style={styles.loader} />;
     }
 
-    if (comments.length === 0) {
+    if (!comments || comments.length === 0) {
         return (
-            <View style={styles.placeholderContent}>
-                <Text style={styles.placeholderText}>No comments yet</Text>
+            <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>Henüz yorum yapılmamış</Text>
             </View>
         );
     }
 
     return (
-        <FlatList
-            data={comments}
-            keyExtractor={(item, index) => `${item.user_id}-${index}`}
-            renderItem={({ item }) => (
-                <View style={styles.commentItem}>
-                    <View style={styles.commentHeader}>
-                        <Image 
-                            source={{ uri: item.user_profile_image }} 
-                            style={styles.commentUserImage} 
-                        />
-                        <View style={styles.commentUserInfo}>
-                            <Text style={styles.commentUserName}>{item.user_name}</Text>
-                            <Text style={styles.commentDate}>
-                                {formatDate(item.created_at)}
-                            </Text>
+        <View style={styles.commentsContainer}>
+            {comments.map((comment, index) => {
+
+                return (
+                    <View key={index} style={styles.commentItem}>
+                        <View style={styles.commentHeader}>
+                            <View style={styles.userInfo}>
+                                <Image 
+                                    source={{ uri: comment.user_profile_image }} 
+                                    style={styles.userImage} 
+                                />
+                                <View>
+                                    <Text style={styles.userName}>{comment.user_name}</Text>
+                                    <Text style={styles.commentDate}>
+                                        {formatDate(comment.created_at)}
+                                    </Text>
+                                </View>
+                            </View>
+                            
+                            {currentUserId === comment.user_id && (
+                                <View style={styles.commentActions}>
+                                    <TouchableOpacity 
+                                        style={styles.actionButton}
+                                        onPress={() => onEditComment && onEditComment(comment.id, comment.comment)}
+                                    >
+                                        <FontAwesomeIcon icon={faEdit} size={16} color="#4ECDC4" />
+                                    </TouchableOpacity>
+                                    <TouchableOpacity 
+                                        style={styles.actionButton}
+                                        onPress={() => {
+                                            console.log("Attempting to delete comment:", comment);
+                                            const commentId = comment.id || comment.comment_id;
+                                            if (commentId) {
+                                                onDeleteComment && onDeleteComment(commentId);
+                                            } else {
+                                                console.error("No comment ID found in:", comment);
+                                            }
+                                        }}
+                                    >
+                                        <FontAwesomeIcon icon={faTrash} size={16} color="#FF6B6B" />
+                                    </TouchableOpacity>
+                                </View>
+                            )}
                         </View>
+                        <Text style={styles.commentText}>{comment.comment}</Text>
                     </View>
-                    <Text style={styles.commentText}>{item.comment}</Text>
-                </View>
-            )}
-            contentContainerStyle={styles.commentsList}
-            showsVerticalScrollIndicator={false}
-            ItemSeparatorComponent={() => <View style={{ height: 15 }} />}
-        />
+                );
+            })}
+        </View>
     );
-}; 
+};
 
 const styles = StyleSheet.create({
     placeholderContent: {
@@ -130,13 +161,35 @@ const styles = StyleSheet.create({
         fontFamily: 'Montserrat-Medium',
         color: '#000',
     },
-    commentsList: {
+    commentsContainer: {
         padding: 15,
     },
-    commentUserName: {
+    commentItem: {
+        backgroundColor: '#f8f8f8',
+        borderRadius: 8,
+        padding: 12,
+        marginBottom: 10,
+    },
+    commentHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    userInfo: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+    },
+    userImage: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+    },
+    userName: {
         fontSize: 14,
         fontFamily: 'Montserrat-Medium',
-        color: '#000',
+        color: '#333',
     },
     commentDate: {
         fontSize: 12,
@@ -147,31 +200,24 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#333',
         fontFamily: 'Montserrat-Regular',
-        lineHeight: 20,
     },
-    commentItem: {
-        backgroundColor: '#fff',
-        borderRadius: 12,
-        padding: 15,
-    },
-    commentHeader: {
+    commentActions: {
         flexDirection: 'row',
+        gap: 12,
+    },
+    actionButton: {
+        padding: 4,
+    },
+    loader: {
+        padding: 20,
+    },
+    emptyContainer: {
+        padding: 20,
         alignItems: 'center',
-        marginBottom: 10,
     },
-    commentUserImage: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        marginRight: 10,
-    },
-    commentUserInfo: {
-        flex: 1,
-    },
- 
-    placeholderText: {
-        fontSize: 14,
+    emptyText: {
         color: '#666',
+        fontSize: 14,
         fontFamily: 'Montserrat-Regular',
     },
     attachmentsList: {
@@ -182,7 +228,6 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         overflow: 'hidden',
     },
-
     attachmentImage: {
         width: '100%',
         height: 200,
@@ -202,7 +247,6 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
     },
-
     uploadInfo: {
         fontSize: 12,
         color: '#666',
@@ -213,5 +257,4 @@ const styles = StyleSheet.create({
         color: '#666',
         fontFamily: 'Montserrat-Regular',
     },
-
 })
