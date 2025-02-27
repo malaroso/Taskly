@@ -9,12 +9,14 @@ interface AuthProps {
         token: string | null;
         authenticated: boolean | null;
         username?: string;
+        userId?: number;
     };
     onLogin?: (username: string, password: string) => Promise<any>;
     onLogout?: () => Promise<any>;
 }
 
 const TOKEN_KEY = 'auth_token';
+const USER_ID_KEY = 'user_id';
 const AuthContext = createContext<AuthProps>({});
 
 export const useAuth = () => {
@@ -26,6 +28,7 @@ export const AuthProvider = ({children}: any) => {
         token: string | null;
         authenticated: boolean | null;
         username?: string;
+        userId?: number;
     }>({
         token: null,
         authenticated: null
@@ -35,10 +38,13 @@ export const AuthProvider = ({children}: any) => {
         console.log('AuthContext Token:', authState.token);
         const loadToken = async () => {
             const token = await SecureStore.getItemAsync(TOKEN_KEY);
+            const userId = await SecureStore.getItemAsync(USER_ID_KEY);
+            
             if (token) {
                 setAuthState({
                     token: token,
-                    authenticated: true
+                    authenticated: true,
+                    userId: userId ? parseInt(userId) : undefined
                 });
             }
         };
@@ -55,11 +61,18 @@ export const AuthProvider = ({children}: any) => {
 
             if (response.data.status && response.data.token) {
                 const token = response.data.token;
+
+                const tokenData = JSON.parse(atob(token.split('.')[1]));
+                const userId = tokenData.userId;
+
+              
                 await SecureStore.setItemAsync(TOKEN_KEY, token);
+                await SecureStore.setItemAsync(USER_ID_KEY, userId.toString());
                 
                 setAuthState({
                     token: token,
-                    authenticated: true
+                    authenticated: true,
+                    userId: userId
                 });
 
                 return {
@@ -84,9 +97,11 @@ export const AuthProvider = ({children}: any) => {
     const logout = async () => {
         try {
             await SecureStore.deleteItemAsync(TOKEN_KEY);
+            await SecureStore.deleteItemAsync(USER_ID_KEY);
             setAuthState({
                 token: null,
-                authenticated: false
+                authenticated: false,
+                userId: undefined
             });
         } catch (error) {
             console.error("Logout error:", error);
