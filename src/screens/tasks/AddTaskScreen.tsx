@@ -15,7 +15,6 @@ import {
     KeyboardAvoidingView,
     TouchableWithoutFeedback,
     Keyboard,
-    PermissionsAndroid
 } from 'react-native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { 
@@ -25,7 +24,8 @@ import {
     faPaperclip,
     faChevronDown,
     faCheck,
-    faImage
+    faImage,
+    faFolder
 } from '@fortawesome/free-solid-svg-icons';
 import { useNavigation } from '@react-navigation/native';
 import { getAllUsers } from '../../services/userService';
@@ -78,7 +78,9 @@ const AddTaskScreen = () => {
     const [loadingUsers, setLoadingUsers] = useState(false);
     const [showAttachmentModal, setShowAttachmentModal] = useState(false);
     const [attachmentDescription, setAttachmentDescription] = useState('');
+    const [errors, setErrors] = useState({ title: '', description: '',});
 
+    
     const priorities = [
         { value: 'high', label: 'High' },
         { value: 'medium', label: 'Medium' },
@@ -120,7 +122,33 @@ const AddTaskScreen = () => {
         });
     };
 
+    const validateForm = () => {
+        let isValid = true;
+        const newErrors = {
+            title: '',
+            description: '',
+        };
+
+        if (!formData.title.trim()) {
+            newErrors.title = 'Başlık alanı zorunludur';
+            isValid = false;
+        }
+
+        if (!formData.description.trim()) {
+            newErrors.description = 'Açıklama alanı zorunludur';
+            isValid = false;
+        }
+
+        setErrors(newErrors);
+        return isValid;
+    };
+
     const handleSubmit = async () => {
+        if (!validateForm()) {
+            Alert.alert('Hata', 'Lütfen zorunlu alanları doldurun');
+            return;
+        }
+
         try {
             const response = await addTask(formData);
 
@@ -145,7 +173,7 @@ const AddTaskScreen = () => {
 
             navigation.goBack();
         } catch (error) {
-            Alert.alert('Error', 'Failed to create task');
+            Alert.alert('Hata', 'Görev oluşturulamadı');
         }
     };
 
@@ -222,13 +250,7 @@ const AddTaskScreen = () => {
     };
 
  
-    const renderSelectionModal = (
-        visible: boolean,
-        onClose: () => void,
-        items: Array<{ value: string, label: string }>,
-        onSelect: (value: string) => void,
-        title: string
-    ) => (
+    const renderSelectionModal = (  visible: boolean,  onClose: () => void, items: Array<{ value: string, label: string }>,onSelect: (value: string) => void,   title: string ) => (
         <Modal
             visible={visible}
             transparent={true}
@@ -321,7 +343,7 @@ const AddTaskScreen = () => {
                 <KeyboardAvoidingView 
                     style={styles.modalOverlay}
                     behavior="padding"
-                    keyboardVerticalOffset={100}
+                    keyboardVerticalOffset={0}
                 >
                     <View style={styles.modalContent}>
                         <View style={styles.modalHeader}>
@@ -413,25 +435,44 @@ const AddTaskScreen = () => {
 
             <ScrollView style={styles.content}>
                 <View style={styles.formGroup}>
-                    <Text style={styles.label}>Title</Text>
+                    <Text style={styles.label}>Başlık</Text>
                     <TextInput
-                        style={styles.input}
+                        style={[
+                            styles.input,
+                            errors.title ? styles.inputError : null
+                        ]}
                         value={formData.title}
-                        onChangeText={(text) => setFormData({...formData, title: text})}
-                        placeholder="Task title"
+                        onChangeText={(text) => {
+                            setFormData({...formData, title: text});
+                            setErrors({...errors, title: ''});
+                        }}
+                        placeholder="Görev başlığı"
                     />
+                    {errors.title ? (
+                        <Text style={styles.errorText}>{errors.title}</Text>
+                    ) : null}
                 </View>
 
                 <View style={styles.formGroup}>
-                    <Text style={styles.label}>Description</Text>
+                    <Text style={styles.label}>Açıklama</Text>
                     <TextInput
-                        style={[styles.input, styles.textArea]}
+                        style={[
+                            styles.input,
+                            styles.textArea,
+                            errors.description ? styles.inputError : null
+                        ]}
                         value={formData.description}
-                        onChangeText={(text) => setFormData({...formData, description: text})}
-                        placeholder="Task description"
+                        onChangeText={(text) => {
+                            setFormData({...formData, description: text});
+                            setErrors({...errors, description: ''});
+                        }}
+                        placeholder="Görev açıklaması"
                         multiline
                         numberOfLines={4}
                     />
+                    {errors.description ? (
+                        <Text style={styles.errorText}>{errors.description}</Text>
+                    ) : null}
                 </View>
 
                 <View style={styles.row}>
@@ -516,14 +557,13 @@ const AddTaskScreen = () => {
                         </View>
                     </TouchableOpacity>
                 </View>
-                <View style={styles.clear}></View>
-
+              
                 <View style={styles.attachmentsContainer}>
                     <Text style={styles.sectionTitle}>Attachments ({formData.attachments.length})</Text>
                     {formData.attachments.map((attachment, index) => (
                         <View key={index} style={styles.attachmentItem}>
                             <FontAwesomeIcon 
-                                icon={attachment.file_path.endsWith('.pdf') ? faFilePdf : faImage} 
+                                icon={attachment.file_path.endsWith('.pdf') ? faFolder : faImage} 
                                 size={16} 
                                 color="#666" 
                             />
@@ -533,6 +573,8 @@ const AddTaskScreen = () => {
                         </View>
                     ))}
                 </View>
+                <View style={styles.clear}></View>
+
             </ScrollView>
 
             {renderSelectionModal(
@@ -859,6 +901,16 @@ const styles = StyleSheet.create({
         fontSize: 16,
         lineHeight: 18,
         fontWeight: 'bold',
+    },
+    inputError: {
+        borderWidth: 1,
+        borderColor: '#FF6B6B',
+    },
+    errorText: {
+        color: '#FF6B6B',
+        fontSize: 12,
+        marginTop: 5,
+        fontFamily: 'Montserrat-Regular',
     },
 });
 
