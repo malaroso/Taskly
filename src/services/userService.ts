@@ -26,4 +26,17 @@ interface UsersResponse {
 export const getAllUsers = async (): Promise<UsersResponse> => {
     const response = await axiosInstance.get<UsersResponse>('/getAllUsers');
     return response.data;
+};
+
+export const updatePassword = async (current_password: string, new_password: string) => {
+    try {
+        const response = await axiosInstance.post('/updateUserPassword', {
+            current_password,
+            new_password
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Update password error:', error);
+        throw error;
+    }
 }; 
