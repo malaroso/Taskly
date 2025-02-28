@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, Image, TouchableOpacity, ScrollView } from 'react-native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faLock, faQuestionCircle, faSignOut, faChevronRight, faTasks, faUser, faBell, faHistory, faPalette, faInfoCircle } from '@fortawesome/free-solid-svg-icons';
@@ -6,7 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import CustomModal from '../../components/CustomModal';
 import { getUserDetail } from '../../services/userService';
 import { UserDetailData } from '../../types/userTypes';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { RootStackParamList } from '../../types/navigation';
 
 
@@ -17,8 +17,8 @@ const ProfileScreen = () => {
     const navigation = useNavigation<RootStackParamList>();
 
     const userMenuItems = [
-        { icon: faUser, title: 'My Profile' },
-        { icon: faTasks, title: 'My Tasks' , route: 'Tasks'},
+        { icon: faUser, title: 'My Profile details', route: 'MyProfile' },
+        { icon: faTasks, title: 'My Tasks', route: 'Tasks' },
         { icon: faBell, title: 'Notifications', route: 'Notification' },
         { icon: faHistory, title: 'Activity History' },
     ];
@@ -30,20 +30,22 @@ const ProfileScreen = () => {
         { icon: faInfoCircle, title: 'About App', route: 'AboutApp' },
     ];
 
-    useEffect(() => {
-        const fetchUserDetail = async () => {
-            try {
-                const response = await getUserDetail();
-                if (response.status) {
-                    setUserDetail(response.data[0]);
+    useFocusEffect(
+        useCallback(() => {
+            const fetchUserDetail = async () => {
+                try {
+                    const response = await getUserDetail();
+                    if (response.status) {
+                        setUserDetail(response.data[0]);
+                    }
+                } catch (error) {
+                    console.error('Error fetching user detail:', error);
                 }
-            } catch (error) {
-                console.error('Error fetching user detail:', error);
-            }
-        };
+            };
 
-        fetchUserDetail();
-    }, []);
+            fetchUserDetail();
+        }, [])
+    );
 
     return (
         <SafeAreaView style={styles.container}>
@@ -61,9 +63,16 @@ const ProfileScreen = () => {
                 <View style={styles.profileCard}>
                     <View style={styles.profileHeader}>
                         <View style={styles.avatarContainer}>
-                            <Text style={styles.avatarText}>
-                                {userDetail?.username.split(' ').map(n => n[0]).join('')}
-                            </Text>
+                            {userDetail?.profile_image ? (
+                                <Image 
+                                    source={{ uri: userDetail.profile_image }} 
+                                    style={styles.avatarImage}
+                                />
+                            ) : (
+                                <Text style={styles.avatarText}>
+                                    {userDetail?.username.split(' ').map(n => n[0]).join('')}
+                                </Text>
+                            )}
                         </View>
                         <View style={styles.profileInfo}>
                             <Text style={styles.userName}>{userDetail?.username}</Text>
@@ -219,17 +228,23 @@ const styles = StyleSheet.create({
         marginBottom: 15,
     },
     avatarContainer: {
-        width: 60,
-        height: 60,
-        borderRadius: 30,
+        width: 80,
+        height: 80,
+        borderRadius: 40,
         backgroundColor: '#4ECDC4',
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 15,
+        overflow: 'hidden',
+    },
+    avatarImage: {
+        width: '100%',
+        height: '100%',
+        resizeMode: 'cover',
     },
     avatarText: {
+        fontSize: 28,
         color: '#fff',
-        fontSize: 24,
         fontFamily: 'Montserrat-Bold',
     },
     profileInfo: {
