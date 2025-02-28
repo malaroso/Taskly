@@ -10,6 +10,8 @@ import NotificationScreen from '../screens/NotificationScreen';
 import AboutAppScreen from '../screens/profile/AboutAppScreen';
 import FAQScreen from '../screens/profile/FAQScreen';
 import PasswordSettingsScreen from '../screens/profile/PasswordSettings';
+import MyProfileScreen from '../screens/profile/MyProfileScreen';
+import MyProfileEditScreen from '../screens/profile/MyProfileEditScreen';
 
 
 const Stack = createStackNavigator();
@@ -33,6 +35,8 @@ const AppNavigation = () => {
                         <Stack.Screen name="AboutApp" component={AboutAppScreen} />
                         <Stack.Screen name="FAQ" component={FAQScreen} />
                         <Stack.Screen name="PasswordSettings" component={PasswordSettingsScreen} />
+                        <Stack.Screen name="MyProfile" component={MyProfileScreen} />
+                        <Stack.Screen name="MyProfileEdit" component={MyProfileEditScreen} />
                     </>
                 )}
             </Stack.Navigator>
