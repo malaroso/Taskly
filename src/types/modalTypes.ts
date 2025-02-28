@@ -1,0 +1,1 @@
+export type StatusModalType = 'success' | 'error'; 
