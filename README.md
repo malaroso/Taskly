@@ -86,43 +86,6 @@ Taskly, ekip çalışmalarını ve proje yönetimini kolaylaştırmak için tasa
 - Axios / Fetch
 - Asenkron Veri Yönetimi
 
-## Dosya Yapısı
-
-Taskly/
-├── assets/
-│ └── images/ # Uygulama görselleri
-│ ├── loader.json # Yükleme animasyonu
-│ ├── planetr.json # Boş görev animasyonu
-│ ├── bell-animation.json # Bildirim animasyonu
-│ └── taskyl-logo-unbg.png # Logo
-├── src/
-│ ├── components/ # Yeniden kullanılabilir bileşenler
-│ │ ├── StatusModal.tsx # Durum bildirimi modali
-│ │ └── TaskDetailComponents.tsx # Görev detay bileşenleri
-│ ├── config/
-│ │ └── constants.ts # Uygulama sabitleri ve yapılandırma
-│ ├── context/
-│ │ └── AuthContext.tsx # Kimlik doğrulama context'i
-│ ├── screens/
-│ │ ├── HomeScreen.tsx # Ana sayfa
-│ │ ├── NotificationScreen.tsx # Bildirimler ekranı
-│ │ ├── profile/
-│ │ │ └── MyProfileScreen.tsx # Profil ekranı
-│ │ └── tasks/
-│ │ ├── AddTaskScreen.tsx # Görev ekleme
-│ │ ├── TaskDetailScreen.tsx # Görev detayı
-│ │ └── TasksScreen.tsx # Görevler listesi
-│ ├── services/
-│ │ ├── notificationService.ts # Bildirim API servisi
-│ │ ├── taskService.ts # Görev API servisi
-│ │ └── userService.ts # Kullanıcı API servisi
-│ ├── types/
-│ │ ├── taskTypes.ts # Görev tipleri
-│ │ └── modalTypes.ts # Modal tipleri
-│ └── utils/
-│ ├── modalHelpers.tsx # Modal yardımcı fonksiyonları
-│ └── taskHelpers.ts # Görev yardımcı fonksiyonları
-└── App.tsx # Ana uygulama bileşeni
 
 
 ##🔑 Anahtar Bileşenler
