@@ -23,7 +23,7 @@ export const renderAttachments = (attachments: any[], loadingAttachments: boolea
     if (attachments.length === 0) {
         return (
             <View style={styles.placeholderContent}>
-                <Text style={styles.placeholderText}>No attachments yet</Text>
+                <Text style={styles.emptyText}>No attachments yet</Text>
             </View>
         );
     }
@@ -84,9 +84,9 @@ export const renderComments = (
 
     if (!comments || comments.length === 0) {
         return (
-            <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>Henüz yorum yapılmamış</Text>
-            </View>
+            <View style={styles.placeholderContent}>
+            <Text style={styles.emptyText}>No Comments yet</Text>
+        </View>
         );
     }
 
