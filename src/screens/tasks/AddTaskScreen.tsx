@@ -25,7 +25,8 @@ import {
     faChevronDown,
     faCheck,
     faImage,
-    faFolder
+    faFolder,
+    faXmark
 } from '@fortawesome/free-solid-svg-icons';
 import { useNavigation } from '@react-navigation/native';
 import { getAllUsers } from '../../services/userService';
@@ -33,30 +34,10 @@ import * as ImagePicker from 'expo-image-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as FileSystem from 'expo-file-system';
 import { addTask } from '../../services/taskService';
-
-
-interface Attachment {
-    description: string;
-    file_path: string;
-    uploaded_by: number;
-}
-
-interface TaskForm {
-    title: string;
-    description: string;
-    status: 'pending' | 'in_progress' | 'completed';
-    priority: 'low' | 'medium' | 'high';
-    due_date: string;
-    attachments: Attachment[];
-    assigned_users: number[];
-}
-
-interface User {
-    id: number;
-    name: string;
-    email: string;
-    profile_image: string;
-}
+import { StatusModal } from '../../components/StatusModal';
+import { StatusModalType } from '../../types/modalTypes';
+import { Attachment, TaskForm, User } from '../../types/taskTypes';
+import { priorities, statuses } from '../../utils/taskHelpers';
 
 const AddTaskScreen = () => {
     const navigation = useNavigation();
@@ -71,7 +52,7 @@ const AddTaskScreen = () => {
     });
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [showPriorityModal, setShowPriorityModal] = useState(false);
-    const [showStatusModal, setShowStatusModal] = useState(false);
+    const [showStatusSelection, setShowStatusSelection] = useState(false);
     const [showUsersModal, setShowUsersModal] = useState(false);
     const [users, setUsers] = useState<User[]>([]);
     const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
@@ -79,19 +60,17 @@ const AddTaskScreen = () => {
     const [showAttachmentModal, setShowAttachmentModal] = useState(false);
     const [attachmentDescription, setAttachmentDescription] = useState('');
     const [errors, setErrors] = useState({ title: '', description: '',});
+    const [statusModal, setStatusModal] = useState<{
+        visible: boolean;
+        type: StatusModalType;
+        message: string;
+    }>({
+        visible: false,
+        type: 'success',
+        message: ''
+    });
 
-    
-    const priorities = [
-        { value: 'high', label: 'High' },
-        { value: 'medium', label: 'Medium' },
-        { value: 'low', label: 'Low' }
-    ];
 
-    const statuses = [
-        { value: 'pending', label: 'Pending' },
-        { value: 'in_progress', label: 'In Progress' },
-        { value: 'completed', label: 'Completed' }
-    ];
 
     const fetchUsers = async () => {
         setLoadingUsers(true);
@@ -152,7 +131,7 @@ const AddTaskScreen = () => {
         try {
             const response = await addTask(formData);
 
-            Alert.alert('Success', 'Task created successfully');
+            showStatusModal('success', 'Task created successfully');
             
             // Form verilerini sıfırla
             setFormData({
@@ -171,9 +150,11 @@ const AddTaskScreen = () => {
             // Attachment açıklamasını sıfırla
             setAttachmentDescription('');
 
-            navigation.goBack();
+            setTimeout(() => {
+                navigation.goBack();
+            }, 2000);
         } catch (error) {
-            Alert.alert('Hata', 'Görev oluşturulamadı');
+            showStatusModal('error', 'Görev oluşturulamadı');
         }
     };
 
@@ -189,31 +170,49 @@ const AddTaskScreen = () => {
 
     const handleAddPhoto = async () => {
         try {
+            // Açıklama kontrolü
+            if (!attachmentDescription.trim()) {
+                showStatusModal('error', 'Please enter a description');
+                return;
+            }
+
+            // Önce izinleri kontrol edelim
+            const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            
+            if (!permissionResult.granted) {
+                showStatusModal('error', 'Gallery access permission is required');
+                return;
+            }
+
             const result = await ImagePicker.launchImageLibraryAsync({
                 mediaTypes: ImagePicker.MediaTypeOptions.Images,
                 quality: 0.8,
                 allowsMultipleSelection: false,
-                base64: false,
             });
 
-            if (!result.canceled && result.assets.length > 0) {
-                const localPath = await saveFileLocally(result.assets[0].uri);
+            console.log("ImagePicker result:", result);
+
+            if (!result.canceled && result.assets && result.assets.length > 0) {
+                console.log("Selected image:", result.assets[0].uri);
                 
                 const newAttachment: Attachment = {
-                    description: attachmentDescription,
-                    file_path: localPath,
-                    uploaded_by: 2,
+                    description: attachmentDescription.trim(),
+                    file_path: result.assets[0].uri,
+                    uploaded_by: 0 // Gerekli alan
                 };
 
-                setFormData(prev => ({
-                    ...prev,
-                    attachments: [...prev.attachments, newAttachment]
-                }));
+                setFormData({
+                    ...formData,
+                    attachments: [...formData.attachments, newAttachment]
+                });
                 
-                Alert.alert('Success', 'Photo saved locally');
+                // Açıklama inputunu temizle
+                setAttachmentDescription('');
+                showStatusModal('success', 'Photo added successfully');
             }
         } catch (error) {
-            Alert.alert('Error', 'Failed to save photo');
+            console.error('Error picking image:', error);
+            showStatusModal('error', 'An error occurred while selecting the photo');
         }
     };
 
@@ -332,94 +331,115 @@ const AddTaskScreen = () => {
         </Modal>
     );
 
-    const renderAttachmentModal = () => (
-        <Modal
-            visible={showAttachmentModal}
-            transparent={true}
-            animationType="slide"
-            onRequestClose={() => setShowAttachmentModal(false)}
-        >
-            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-                <KeyboardAvoidingView 
-                    style={styles.modalOverlay}
-                    behavior="padding"
-                    keyboardVerticalOffset={0}
-                >
-                    <View style={styles.modalContent}>
-                        <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>
-                                {formData.attachments.length > 0 
-                                    ? `${formData.attachments.length} Photo Selected`
-                                    : 'Add Photo'
-                                }
-                            </Text>
-                            <View style={styles.modalHeaderButtons}>
-                                <TouchableOpacity 
-                                    style={styles.cancelButton}
-                                    onPress={() => setShowAttachmentModal(false)}
-                                >
-                                    <Text style={styles.cancelButtonText}>Cancel</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity 
-                                    style={styles.doneButton}
-                                    onPress={() => setShowAttachmentModal(false)}
-                                >
-                                    <Text style={styles.doneButtonText}>Done</Text>
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-                        
-                        <View style={styles.formGroup}>
-                            <Text style={styles.label}>Description</Text>
-                            <TextInput
-                                style={styles.descriptionInput}
-                                value={attachmentDescription}
-                                onChangeText={setAttachmentDescription}
-                                placeholder="Enter description"
-                                placeholderTextColor="#999"
-                            />
-                        </View>
-
-                        <View style={styles.selectedPhotosContainer}>
-                            {formData.attachments.map((attachment, index) => (
-                                <View key={index} style={styles.selectedPhotoItem}>
+    const renderAttachmentModal = () => {
+        return (
+            <Modal
+                visible={showAttachmentModal}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={() => setShowAttachmentModal(false)}
+            >
+                <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                    <KeyboardAvoidingView 
+                        style={styles.modalOverlay}
+                        behavior={Platform.OS === "ios" ? "padding" : "height"}
+                        keyboardVerticalOffset={0}
+                    >
+                        <View style={styles.modalContent}>
+                            <View style={styles.modalHeader}>
+                                <Text style={styles.modalTitle}>
+                                    {formData.attachments.length > 0 
+                                        ? `${formData.attachments.length} Photo Selected`
+                                        : 'Add Photo'
+                                    }
+                                </Text>
+                                <View style={styles.modalHeaderButtons}>
                                     <TouchableOpacity 
-                                        style={styles.removeButton}
-                                        onPress={() => handleRemovePhoto(index)}
+                                        style={styles.cancelButton}
+                                        onPress={() => setShowAttachmentModal(false)}
                                     >
-                                        <Text style={styles.removeButtonText}>×</Text>
+                                        <Text style={styles.cancelButtonText}>Cancel</Text>
                                     </TouchableOpacity>
-                                    <Image
-                                        source={{ uri: attachment.file_path }}
-                                        style={styles.selectedPhotoImage}
-                                    />
-                                    <Text 
-                                        style={styles.selectedPhotoText}
-                                        numberOfLines={1}
+                                    <TouchableOpacity 
+                                        style={styles.doneButton}
+                                        onPress={() => setShowAttachmentModal(false)}
                                     >
-                                        {attachment.description || 'No description'}
-                                    </Text>
+                                        <Text style={styles.doneButtonText}>Done</Text>
+                                    </TouchableOpacity>
                                 </View>
-                            ))}
-                        </View>
+                            </View>
+                            <View style={styles.span}>
+                                <Text style={styles.spanText}>Please enter a description first and then select a photo</Text>
+                            </View>
+                            <View style={styles.formGroup}>
+                                <Text style={styles.label}>Description</Text>
+                                <TextInput
+                                    style={styles.descriptionInput}
+                                    value={attachmentDescription}
+                                    onChangeText={setAttachmentDescription}
+                                    placeholder="Enter description"
+                                    placeholderTextColor="#999"
+                                />
+                            </View>
 
-                        <TouchableOpacity 
-                            style={[styles.attachmentButton, styles.photoButton]}
-                            onPress={handleAddPhoto}
-                        >
-                            <FontAwesomeIcon icon={faImage} size={20} color="#fff" />
-                            <Text style={styles.attachmentButtonText}>
-                                {formData.attachments.length > 0 
-                                    ? `Add More (${formData.attachments.length})` 
-                                    : 'Select Photo'
-                                }
-                            </Text>
-                        </TouchableOpacity>
-                    </View>
-                </KeyboardAvoidingView>
-            </TouchableWithoutFeedback>
-        </Modal>
-    );
+                            <View style={styles.selectedPhotosContainer}>
+                                {formData.attachments.map((attachment, index) => (
+                                    <View key={index} style={styles.selectedPhotoItem}>
+                                        <TouchableOpacity 
+                                            style={styles.removeButton}
+                                            onPress={() => handleRemovePhoto(index)}
+                                        >
+                                            <Text style={styles.removeButtonText}>×</Text>
+                                        </TouchableOpacity>
+                                        <Image
+                                            source={{ uri: attachment.file_path }}
+                                            style={styles.selectedPhotoImage}
+                                        />
+                                        <Text 
+                                            style={styles.selectedPhotoText}
+                                            numberOfLines={1}
+                                        >
+                                            {attachment.description || 'No description'}
+                                        </Text>
+                                    </View>
+                                ))}
+                            </View>
+
+                            <TouchableOpacity 
+                                style={styles.photoButton}
+                                onPress={handleAddPhoto}
+                                activeOpacity={0.7}
+                            >
+                                <FontAwesomeIcon icon={faImage} size={20} color="#fff" />
+                                <Text style={styles.photoButtonText}>
+                                    {formData.attachments.length > 0 
+                                        ? `Add More (${formData.attachments.length})` 
+                                        : 'Select Photo'
+                                    }
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    </KeyboardAvoidingView>
+                </TouchableWithoutFeedback>
+            </Modal>
+        );
+    };
+
+    const showStatusModal = (type: StatusModalType, message: string) => {
+        setStatusModal(prev => ({ ...prev, visible: false }));
+        
+        setTimeout(() => {
+            setStatusModal({
+                visible: true,
+                type,
+                message
+            });
+
+            setTimeout(() => {
+                setStatusModal(prev => ({ ...prev, visible: false }));
+            }, 2000);
+        }, 100);
+    };
 
     return (
         <SafeAreaView style={styles.container}>
@@ -493,7 +513,7 @@ const AddTaskScreen = () => {
                         <Text style={styles.label}>Status</Text>
                         <TouchableOpacity 
                             style={styles.select}
-                            onPress={() => setShowStatusModal(true)}
+                            onPress={() => setShowStatusSelection(true)}
                         >
                             <Text style={styles.selectText}>
                                 {statuses.find(s => s.value === formData.status)?.label}
@@ -586,8 +606,8 @@ const AddTaskScreen = () => {
             )}
 
             {renderSelectionModal(
-                showStatusModal,
-                () => setShowStatusModal(false),
+                showStatusSelection,
+                () => setShowStatusSelection(false),
                 statuses,
                 (value) => setFormData({ ...formData, status: value as TaskForm['status'] }),
                 'Select Status'
@@ -595,6 +615,12 @@ const AddTaskScreen = () => {
 
             {renderUsersModal()}
             {renderAttachmentModal()}
+
+            <StatusModal
+                visible={statusModal.visible}
+                type={statusModal.type}
+                message={statusModal.message}
+            />
         </SafeAreaView>
     );
 };
@@ -715,7 +741,7 @@ const styles = StyleSheet.create({
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,
         padding: 20,
-        maxHeight: '50%',
+        maxHeight: '60%',
     },
     modalHeader: {
         flexDirection: 'row',
@@ -816,12 +842,18 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     photoButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 12,
+        borderRadius: 8,
         backgroundColor: '#4ECDC4',
     },
-    attachmentButtonText: {
+    photoButtonText: {
         color: '#fff',
         fontSize: 14,
         fontFamily: 'Montserrat-Medium',
+        marginLeft: 5,
     },
     attachmentsContainer: {
         marginTop: 20,
@@ -910,6 +942,14 @@ const styles = StyleSheet.create({
         color: '#FF6B6B',
         fontSize: 12,
         marginTop: 5,
+        fontFamily:     'Montserrat-Regular',
+    },
+    span: {
+        marginTop: 10,
+        marginBottom: 10,
+    },
+    spanText: {
+        fontSize: 12,
         fontFamily: 'Montserrat-Regular',
     },
 });
