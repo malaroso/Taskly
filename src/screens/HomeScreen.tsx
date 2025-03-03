@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, SafeAreaView, Modal, Image, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, SafeAreaView, Modal, Image, ScrollView, Dimensions } from 'react-native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faPlus, faTasks, faClipboardCheck, faTimesCircle, faFilter, faChevronRight, faCheckSquare, faBell, faCalendar, faRefresh, faSignOut, faB } from '@fortawesome/free-solid-svg-icons';
 import { getUserTasks } from '../services/taskService';
@@ -10,12 +10,16 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { getUnreadCount } from '../services/notificationService';
+import LottieView from 'lottie-react-native';
 
 export type RootStackParamList = {
   TaskDetail: { taskID: number };
   Notification: undefined;
   // ... diğer ekranlar gerekirse eklenir
 };
+
+
+const { width, height } = Dimensions.get('window');
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -71,13 +75,28 @@ const HomeScreen = () => {
             case 'In Process':
                 return task.status === 'pending';
             case 'Complete':
-                return task.status === 'success';
+                return task.status === 'completed';
             case 'Cancel':
                 return task.status === 'cancel';
             default:
                 return true;
         }
     });
+
+    const renderEmptyList = () => (
+      <View style={styles.emptyContainer}>
+          <LottieView
+              source={require('../../assets/images/planetr.json')}
+              autoPlay
+              loop
+              style={styles.lottieAnimation}
+          />
+          <Text style={styles.emptyTitle}>There are no tasks!</Text>
+          <Text style={styles.emptySubtitle}>
+              Create a new task by clicking the + button in the top right corner
+          </Text>
+      </View>
+  );
 
     const renderTask = ({ item }: { item: Task }) => {
       let iconName;
@@ -104,8 +123,12 @@ const HomeScreen = () => {
           <View style={styles.taskContainer}>
             <FontAwesomeIcon icon={iconName} size={20} color="#666" style={styles.taskIcon} />
             <View style={styles.taskInfo}>
-              <Text style={styles.taskTitle}>{item.title}</Text>
-              <Text style={styles.taskDescription}>{item.description}</Text>
+              <Text style={styles.taskTitle} numberOfLines={2} ellipsizeMode="tail">
+                {item.title}
+              </Text>
+              <Text style={styles.taskDescription} numberOfLines={4} ellipsizeMode="tail">
+                {item.description}
+              </Text>
             </View>
             <View style={styles.taskUsers}>
               {item.other_user_images.slice(0, 3).map((user: string, index: number) => (
@@ -120,6 +143,10 @@ const HomeScreen = () => {
 
     const handleLogout = () => {
         setLogoutModalVisible(true);
+    };
+
+    const handleFilterChange = (newFilter: string) => {
+        setFilter(newFilter);
     };
 
     return (
@@ -154,24 +181,52 @@ const HomeScreen = () => {
               <Text style={styles.title}>Today</Text>
               <View style={styles.cardContainer}>
                   <View style={styles.cardRow}>
-                      <TouchableOpacity style={[styles.card, styles.ongoing]}>
+                      <TouchableOpacity 
+                          style={[
+                              styles.card, 
+                              styles.ongoing,
+                              filter === 'Ongoing' && styles.selectedCard
+                          ]}
+                          onPress={() => handleFilterChange('Ongoing')}
+                      >
                           <View style={styles.bubble} />
                           <Text style={styles.cardText}>Ongoing</Text>
                           <FontAwesomeIcon icon={faTasks} size={24} color="#fff" />
                       </TouchableOpacity>
-                      <TouchableOpacity style={[styles.card, styles.inProcess]}>
+                      <TouchableOpacity 
+                          style={[
+                              styles.card, 
+                              styles.inProcess,
+                              filter === 'In Process' && styles.selectedCard
+                          ]}
+                          onPress={() => handleFilterChange('In Process')}
+                      >
                           <Text style={styles.cardText}>In Process</Text>
                           <View style={styles.bubble2} />
-                          <FontAwesomeIcon icon={faClipboardCheck} size={24} color="#fff" />
+                          <FontAwesomeIcon icon={faRefresh} size={24} color="#fff" />
                       </TouchableOpacity>
                   </View>
                   <View style={styles.cardRow}>
-                      <TouchableOpacity style={[styles.card, styles.complete]}>
+                      <TouchableOpacity 
+                          style={[
+                              styles.card, 
+                              styles.complete,
+                              filter === 'Complete' && styles.selectedCard
+                          ]}
+                          onPress={() => handleFilterChange('Complete')}
+                      >
                           <View style={styles.bubble3} />
                           <Text style={styles.cardText}>Complete</Text>
                           <FontAwesomeIcon icon={faClipboardCheck} size={24} color="#fff" />
                       </TouchableOpacity>
-                      <TouchableOpacity style={[styles.card, styles.cancel]}>
+                      <TouchableOpacity 
+                          style={[
+                              styles.card, 
+                              styles.cancel,
+                              filter === 'Cancel' && styles.selectedCard
+                          ]}
+                          onPress={() => handleFilterChange('Cancel')}
+                      >
                           <View style={styles.bubble4} />
                           <Text style={styles.cardText}>Cancel</Text>
                           <FontAwesomeIcon icon={faTimesCircle} size={24} color="#fff" />
@@ -182,14 +237,16 @@ const HomeScreen = () => {
 
             <View style={styles.tasksArea}>
               <View style={styles.taskHeader}>
-                  {/* <TouchableOpacity style={styles.addTaskButton}>
-                    <Text style={styles.addTask}>Add Task</Text>
-                    <View style={styles.addTaskIcon}>
-                      <FontAwesomeIcon icon={faPlus} size={18}  color="#FFF" />
-                    </View>
-                  </TouchableOpacity> */}
-                  <TouchableOpacity style={styles.filterButton} onPress={() => setModalVisible(true)}>
-                    <Text style={styles.filterText}>{filter}</Text>
+                  <TouchableOpacity 
+                      style={[
+                          styles.filterButton,
+                          filter === 'All Tasks' && styles.selectedFilterButton
+                      ]}
+                      onPress={() => handleFilterChange('All Tasks')}
+                  >
+                    <Text style={styles.filterText}>
+                        {filter === 'All Tasks' ? 'All Tasks' : `Filtered: ${filter}`}
+                    </Text>
                     <FontAwesomeIcon icon={faFilter} size={18} color="#FFF" />
                   </TouchableOpacity>
                 </View>
@@ -197,25 +254,17 @@ const HomeScreen = () => {
                     data={filteredTasks}
                     renderItem={renderTask}
                     keyExtractor={item => item.task_id.toString()}
+                    ListEmptyComponent={renderEmptyList}
                 />
             </View>
           </View>
           <View style={styles.clearArea} />
         </ScrollView>
 
-        <Modal animationType="slide" transparent={true} visible={modalVisible} onRequestClose={() => setModalVisible(false)}>
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              {['All Tasks', 'Ongoing', 'In Process', 'Complete', 'Cancel'].map(status => (
-                <TouchableOpacity  key={status}  style={styles.modalButton} onPress={() => { setFilter(status); setModalVisible(false); }}>
-                  <Text style={styles.modalButtonText}>{status}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        </Modal>
-
-        <CustomModal visible={logoutModalVisible} title="Logout" message="Are you sure you want to logout?"
+        <CustomModal 
+            visible={logoutModalVisible} 
+            title="Logout" 
+            message="Are you sure you want to logout?"
             onConfirm={() => {
                 setLogoutModalVisible(false);
                 onLogout?.();
@@ -474,6 +523,44 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'Montserrat-Bold',
   },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    marginTop: -80,
+  },
+  lottieAnimation: {
+    width: width * 0.5,
+    height: width * 0.5,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontFamily: 'Montserrat-Bold',
+    color: '#333',
+    marginTop: -20,
+    marginBottom: 10,
+    textAlign: 'center',
+},
+emptySubtitle: {
+    fontSize: 14,
+    fontFamily: 'Montserrat-Regular',
+    color: '#666',
+    textAlign: 'center',
+    maxWidth: '80%',
+},
+selectedCard: {
+    borderWidth: 3,
+    borderColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 8,
+},
+selectedFilterButton: {
+    backgroundColor: '#4ECDC4',
+}
 });
 
 export default HomeScreen;
