@@ -90,4 +90,22 @@ export const updateComment = async (comment_id: number, comment: string) => {
         console.error('Update comment error:', error);
         throw error;
     }
+};
+
+interface TaskAttachmentData {
+    description: string;
+    file_path: string;
+}
+
+export const addTaskAttachment = async (taskId: number, attachments: TaskAttachmentData[]) => {
+    try {
+        const response = await axiosInstance.post('/addTaskAttachment', {
+            task_id: taskId,
+            attachments
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Add task attachment error:', error);
+        throw error;
+    }
 }; 
