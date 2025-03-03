@@ -55,3 +55,27 @@ export interface TaskCommentsResponse {
     status: boolean;
     data: TaskComment[];
 }
+
+
+export interface Attachment {
+  description: string;
+  file_path: string;
+  uploaded_by: number;
+}
+
+export interface TaskForm {
+  title: string;
+  description: string;
+  status: 'pending' | 'in_progress' | 'completed';
+  priority: 'low' | 'medium' | 'high';
+  due_date: string;
+  attachments: Attachment[];
+  assigned_users: number[];
+}
+
+export interface User {
+  id: number;
+  name: string;
+  email: string;
+  profile_image: string;
+}
