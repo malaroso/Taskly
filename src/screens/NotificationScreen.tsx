@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, FlatList, ActivityIndicator, Dimensions } from 'react-native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faArrowLeft, faCircle, faCheckCircle, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -7,8 +7,11 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { getNotifications, markNotificationAsRead, deleteNotification, getUnreadCount } from '../services/notificationService';
 import { Notification } from '../types/notificationTypes';
 import { RootStackParamList } from '../types/navigation';
+import LottieView from 'lottie-react-native';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
+const { width, height } = Dimensions.get('window');
 
 const NotificationScreen = () => {
     const navigation = useNavigation<NavigationProp>();
@@ -127,6 +130,21 @@ const NotificationScreen = () => {
         </TouchableOpacity>
     );
 
+    const renderEmptyList = () => (
+        <View style={styles.emptyContainer}>
+            <LottieView
+                source={require('../../assets/images/bell-animation.json')}
+                autoPlay
+                loop
+                style={styles.lottieAnimation}
+            />
+            <Text style={styles.emptyTitle}>There are no notifications!</Text>
+            <Text style={styles.emptySubtitle}>
+               When you perform an action, notifications will appear here.
+            </Text>
+        </View>
+    );
+
     const renderContent = () => {
         if (loading) {
             return (
@@ -153,11 +171,7 @@ const NotificationScreen = () => {
                 renderItem={renderNotification}
                 keyExtractor={item => item.notification_id.toString()}
                 contentContainerStyle={styles.notificationsList}
-                ListEmptyComponent={
-                    <View style={styles.centerContainer}>
-                        <Text style={styles.emptyText}>Bildirim bulunmamaktadır</Text>
-                    </View>
-                }
+                ListEmptyComponent={renderEmptyList}
             />
         );
     };
@@ -297,6 +311,31 @@ const styles = StyleSheet.create({
     },
     deleteButton: {
         padding: 4,
+    },
+    emptyContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+      },
+      lottieAnimation: {
+        width: width * 0.5,
+        height: width * 0.5,
+      },
+      emptyTitle: {
+        fontSize: 18,
+        fontFamily: 'Montserrat-Bold',
+        color: '#333',
+        marginTop: 20,
+        marginBottom: 10,
+        textAlign: 'center',
+    },
+    emptySubtitle: {
+        fontSize: 14,
+        fontFamily: 'Montserrat-Regular',
+        color: '#666',
+        textAlign: 'center',
+        maxWidth: '80%',
     },
 });
 
