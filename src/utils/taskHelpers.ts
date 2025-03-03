@@ -69,3 +69,17 @@ export const isImageFile = (filePath: string) => {
     const extension = filePath.toLowerCase().substring(filePath.lastIndexOf('.'));
     return imageExtensions.includes(extension);
 }; 
+
+    
+export const priorities = [
+    { value: 'high', label: 'High' },
+    { value: 'medium', label: 'Medium' },
+    { value: 'low', label: 'Low' }
+];
+
+export const statuses = [
+    { value: 'pending', label: 'Pending' },
+    { value: 'in_progress', label: 'In Progress' },
+    { value: 'completed', label: 'Completed' }
+];
+
