@@ -18,7 +18,7 @@ const Stack = createStackNavigator();
 
 const AppNavigation = () => {
     const { authState } = useAuth();
-    console.log('authState', authState);
+    console.log('appNavigation authState: ', authState);
     return (
         <NavigationContainer>
             <Stack.Navigator initialRouteName="Welcome" screenOptions={{ headerShown: false }}>

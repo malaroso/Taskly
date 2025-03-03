@@ -1,6 +1,9 @@
 export type RootStackParamList = {
   Welcome: undefined;
   Login: undefined;
+  Main: undefined;
+  MyProfile: undefined;
+  MyProfileEdit: { userDetail: any };
   Home: undefined;
   Profile: undefined;
   TodoList: undefined;
@@ -10,4 +13,10 @@ export type RootStackParamList = {
   Notification: undefined;
   AboutApp: undefined;
   FAQ: undefined;
-}; 
+};
+
+declare global {
+  namespace ReactNavigation {
+    interface RootParamList extends RootStackParamList {}
+  }
+} 
