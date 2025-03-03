@@ -2,11 +2,12 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faArrowLeft, faEnvelope, faPhone, faLocationDot, faCity, faGlobe, faPen } from '@fortawesome/free-solid-svg-icons';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, NavigationProp } from '@react-navigation/native';
 import { getUserDetail } from '../../services/userService';
+import { RootStackParamList } from '../../types/navigation';
 
 const MyProfileScreen = () => {
-    const navigation = useNavigation();
+    const navigation = useNavigation<NavigationProp<RootStackParamList>>();
     const [userDetail, setUserDetail] = useState<any>(null);
 
  
