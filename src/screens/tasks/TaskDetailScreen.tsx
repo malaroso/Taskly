@@ -1,15 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, ActivityIndicator, SafeAreaView, ScrollView, FlatList, TouchableOpacity, TextInput, Button, Modal, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, Alert } from 'react-native';
+import { View, Text, StyleSheet, Image, ActivityIndicator, SafeAreaView, ScrollView, FlatList, TouchableOpacity, TextInput, Modal, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, Alert } from 'react-native';
 import { RouteProp, useRoute } from '@react-navigation/native';
-import { getTaskDetail, getTaskAttachments, getTaskComments, deleteTask, addComment, deleteComment, updateComment } from '../../services/taskService';
+import { getTaskDetail, getTaskAttachments, getTaskComments, deleteTask, addComment, deleteComment, updateComment, addTaskAttachment } from '../../services/taskService';
 import { TaskDetail, TaskComment, TaskAttachment } from '../../types/taskTypes';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { useNavigation } from '@react-navigation/native';
-import { faArrowLeft, faShareAlt, faComment, faListDots, faAdd, faCalendar, faClock, faEdit, faFile, faDownload, faTrash, faCheck, faXmark } from '@fortawesome/free-solid-svg-icons';
+import { faArrowLeft, faComment, faAdd, faCalendar, faClock, faEdit, faFile, faTrash, faCheck, faXmark, faImage } from '@fortawesome/free-solid-svg-icons';
 import {getStatusColor , getPriorityColor, getStatusText, getPriorityText, formatDate} from '../../utils/taskHelpers';
 import { renderAttachments, renderComments } from '../../components/TaskDetailComponents';
+import * as ImagePicker from 'expo-image-picker';
 
 type TaskDetailScreenRouteProp = RouteProp<{ params: { taskID: number } }, 'params'>;
+
+interface TempAttachment {
+    id: number;
+    description: string;
+    file_path: string;
+}
 
 const TaskDetailScreen = () => {
     const route = useRoute<TaskDetailScreenRouteProp>();
@@ -34,11 +41,15 @@ const TaskDetailScreen = () => {
         visible: false,
         commentId: null as number | null
     });
+    
     const [editCommentModal, setEditCommentModal] = useState({
         visible: false,
         commentId: null as number | null,
         commentText: ''
     });
+    const [showAttachmentModal, setShowAttachmentModal] = useState(false);
+    const [tempAttachments, setTempAttachments] = useState<TempAttachment[]>([]);
+    const [attachmentDescription, setAttachmentDescription] = useState('');
 
     useEffect(() => {
         const fetchTaskDetail = async () => {
@@ -111,7 +122,7 @@ const TaskDetailScreen = () => {
 
             setTimeout(() => {
                 setStatusModal(prev => ({ ...prev, visible: false }));
-            }, 3000);
+            }, 2000);
         }, 100);
     };
 
@@ -142,18 +153,21 @@ const TaskDetailScreen = () => {
             showStatusModal('error', 'Yorum eklenirken bir hata oluştu');
         }
     };
+    
     const handleDeleteTask = async () => {
         try {
             const response = await deleteTask(taskID);
             
             if (response.status) {
-                Alert.alert('Başarılı', response.message);
-                navigation.goBack();
+                showStatusModal('success', response.message);
+                setTimeout(() => {
+                    navigation.goBack();
+                }, 3000);
             } else {
-                Alert.alert('Hata', response.message);
+                showStatusModal('error', response.message);
             }
         } catch (error) {
-            Alert.alert('Hata', 'Görev silinirken bir hata oluştu');
+            showStatusModal('error', 'Görev silinirken bir hata oluştu');
         } finally {
             setDeleteModalVisible(false);
         }
@@ -236,6 +250,85 @@ const TaskDetailScreen = () => {
         }
     };
 
+    const handleAddPhoto = async () => {
+        try {
+            console.log("Attempting to open image picker...");
+            
+            // Önce izinleri kontrol edelim
+            const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            
+            if (!permissionResult.granted) {
+                Alert.alert("İzin Gerekli", "Fotoğraf seçmek için galeri erişim izni gereklidir.");
+                return;
+            }
+            
+            // Açıklama değerini alalım
+            const currentDescription = attachmentDescription.trim();
+            
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                quality: 0.8,
+            });
+            
+            console.log("ImagePicker result:", result);
+            
+            if (!result.canceled && result.assets && result.assets.length > 0) {
+                console.log("Selected image:", result.assets[0].uri);
+                
+                const newAttachment: TempAttachment = {
+                    id: Date.now(),
+                    description: currentDescription || 'No description',
+                    file_path: result.assets[0].uri
+                };
+                
+                setTempAttachments(prev => [...prev, newAttachment]);
+                setAttachmentDescription(''); // Açıklamayı temizle
+                console.log("Added attachment:", newAttachment);
+            }
+        } catch (error) {
+            console.error("Error picking image:", error);
+            Alert.alert("Hata", "Fotoğraf seçilirken bir hata oluştu: " + error);
+        }
+    };
+
+    const handleRemovePhoto = (id: number) => {
+        setTempAttachments(prev => prev.filter(item => item.id !== id));
+    };
+
+    const handleDone = async () => {
+        try {
+            if (tempAttachments.length === 0) {
+                setShowAttachmentModal(false);
+                return;
+            }
+
+            // Dosyaları yükle ve path'leri al
+            const attachmentsData = tempAttachments.map(attachment => ({
+                description: attachment.description,
+                file_path: attachment.file_path // Burada gerçek dosya yolu olacak
+            }));
+
+            const response = await addTaskAttachment(taskID, attachmentsData);
+            
+            if (response.status) {
+                showStatusModal('success', 'Dosyalar başarıyla yüklendi');
+
+                const attachmentsResponse = await getTaskAttachments(taskID);
+                if (attachmentsResponse.status) {
+                    setAttachments(attachmentsResponse.data);
+                }
+
+                setShowAttachmentModal(false);
+                setTempAttachments([]);
+                setAttachmentDescription('');
+            } else {
+                showStatusModal('error', response.message || 'Dosya yüklenirken bir hata oluştu');
+            }
+        } catch (error) {
+            showStatusModal('error', 'Dosya yüklenirken bir hata oluştu');
+        }
+    };
+
     if (loading) {
         return <ActivityIndicator size="large" color="#0000ff" />;
     }
@@ -259,7 +352,9 @@ const TaskDetailScreen = () => {
                             <FontAwesomeIcon icon={faArrowLeft} size={24} color="#000" />
                         </TouchableOpacity>
                         <View style={styles.buttonContainer}>
-                            <FontAwesomeIcon icon={faAdd} size={24} color="green" />
+                            <TouchableOpacity onPress={() => setShowAttachmentModal(true)}>
+                                <FontAwesomeIcon icon={faAdd} size={24} color="green" />
+                            </TouchableOpacity>
                             <TouchableOpacity onPress={() => setModalVisible(true)}>
                                 <FontAwesomeIcon icon={faComment} size={24} color="#666" />
                             </TouchableOpacity>
@@ -275,7 +370,7 @@ const TaskDetailScreen = () => {
                     </View>
 
                     <View style={styles.teamContainer}>
-                        <Text style={styles.sectionTitle}>Takım Üyeleri</Text>
+                        <Text style={styles.sectionTitle}>Team Members</Text>
                         <View style={styles.teamWrapper}>
                             <FlatList
                                 horizontal
@@ -293,7 +388,7 @@ const TaskDetailScreen = () => {
                         </View>
                     </View>
                     <View style={styles.dateContainer}>
-                        <Text style={styles.sectionTitle}>Tarihler</Text>
+                        <Text style={styles.sectionTitle}>Dates</Text>
                         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                             <View style={styles.datesWrapper}>
                                 <View style={styles.dateItem}>
@@ -577,6 +672,103 @@ const TaskDetailScreen = () => {
                 </TouchableWithoutFeedback>
             </Modal>
 
+            {/* Add Attachment Modal */}
+            <Modal
+                visible={showAttachmentModal}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={() => setShowAttachmentModal(false)}
+            >
+                <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                    <KeyboardAvoidingView 
+                        style={styles.modalOverlay}
+                        behavior={Platform.OS === "ios" ? "padding" : "height"}
+                    >
+                        <View style={styles.modalContainer}>
+                            <View style={styles.bottomSheetContent}>
+                                <View style={styles.modalHeader}>
+                                    <Text style={styles.modalTitle}>
+                                        {tempAttachments.length > 0 
+                                            ? `${tempAttachments.length} Photo Selected`
+                                            : 'Add Photo'
+                                        }
+                                    </Text>
+                                    <View style={styles.modalHeaderButtons}>
+                                        <TouchableOpacity 
+                                            style={styles.cancelButton}
+                                            onPress={() => {
+                                                setShowAttachmentModal(false);
+                                                setTempAttachments([]);
+                                                setAttachmentDescription('');
+                                            }}
+                                        >
+                                            <Text style={styles.cancelButtonText}>Cancel</Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity 
+                                            style={styles.doneButton}
+                                            onPress={handleDone}
+                                        >
+                                            <Text style={styles.doneButtonText}>Done</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
+                                
+                                <View style={styles.formGroup}>
+                                    <Text style={styles.label}>Description</Text>
+                                    <TextInput
+                                        style={styles.descriptionInput}
+                                        value={attachmentDescription}
+                                        onChangeText={setAttachmentDescription}
+                                        placeholder="Enter description"
+                                        placeholderTextColor="#999"
+                                        multiline
+                                    />
+                                </View>
+
+                                <View style={styles.selectedPhotosContainer}>
+                                    {tempAttachments.map((attachment) => (
+                                        <View key={attachment.id} style={styles.selectedPhotoItem}>
+                                            <TouchableOpacity 
+                                                style={styles.removeButton}
+                                                onPress={() => handleRemovePhoto(attachment.id)}
+                                            >
+                                                <Text style={styles.removeButtonText}>×</Text>
+                                            </TouchableOpacity>
+                                            <Image
+                                                source={{ uri: attachment.file_path }}
+                                                style={styles.selectedPhotoImage}
+                                            />
+                                            <Text 
+                                                style={styles.selectedPhotoText}
+                                                numberOfLines={1}
+                                            >
+                                                {attachment.description || 'No description'}
+                                            </Text>
+                                        </View>
+                                    ))}
+                                </View>
+
+                                <TouchableOpacity 
+                                    style={{
+                                        backgroundColor: '#4ECDC4',
+                                        padding: 15,
+                                        borderRadius: 8,
+                                        alignItems: 'center',
+                                        marginTop: 20
+                                    }}
+                                    onPress={() => {
+                                        console.log("Photo button pressed");
+                                        handleAddPhoto();
+                                    }}
+                                >
+                                    <Text style={{ color: '#fff', fontSize: 16 }}>Select Photo</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </KeyboardAvoidingView>
+                </TouchableWithoutFeedback>
+            </Modal>
+
             {/* Status Modal */}
             <Modal
                 visible={statusModal.visible}
@@ -767,6 +959,7 @@ const styles = StyleSheet.create({
     modalOverlay: {
         flex: 1,
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'flex-end',
     },
     modalContainer: {
         flex: 1,
@@ -774,10 +967,10 @@ const styles = StyleSheet.create({
     },
     bottomSheetContent: {
         backgroundColor: '#fff',
-        padding: 20,
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,
-        minHeight: 200,
+        padding: 20,
+        maxHeight: '80%',
     },
     modalHeader: {
         flexDirection: 'row',
@@ -900,6 +1093,153 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontFamily: 'Montserrat-Medium',
         flex: 1,
+    },
+    addButton: {
+        padding: 8,
+        borderRadius: 20,
+        backgroundColor: '#fff',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    photoButton: {
+        backgroundColor: '#4ECDC4',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 15,
+        borderRadius: 8,
+        gap: 10,
+        marginTop: 20,
+    },
+    photoButtonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontFamily: 'Montserrat-Medium',
+    },
+    descriptionInput: {
+        backgroundColor: '#fff',
+        borderWidth: 1,
+        borderColor: '#e0e0e0',
+        borderRadius: 8,
+        padding: 12,
+        fontSize: 16,
+        fontFamily: 'Montserrat-Regular',
+        minHeight: 100,
+        textAlignVertical: 'top',
+    },
+    modalContent: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    modalHeaderButtons: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+    },
+    cancelButton: {
+        padding: 8,
+        borderRadius: 0,
+        marginRight: 20,
+        backgroundColor: '#fff',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    formGroup: {
+        marginBottom: 20,
+    },
+    label: {
+        fontSize: 16,
+        fontFamily: 'Montserrat-Medium',
+        color: '#666',
+        marginBottom: 8,
+    },
+    doneButton: {
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        borderRadius: 8,
+        backgroundColor: '#4ECDC4',
+    },
+    doneButtonText: {
+        color: '#fff',
+        fontFamily: 'Montserrat-Medium',
+    },
+    selectedPhotosContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+        marginBottom: 15,
+    },
+    selectedPhotoItem: {
+        width: 80,
+        alignItems: 'center',
+        position: 'relative',
+    },
+    selectedPhotoImage: {
+        width: 60,
+        height: 60,
+        borderRadius: 8,
+        marginBottom: 4,
+        resizeMode: 'cover',
+    },
+    selectedPhotoText: {
+        fontSize: 10,
+        color: '#666',
+        textAlign: 'center',
+        fontFamily: 'Montserrat-Regular',
+    },
+    photoCountBadge: {
+        position: 'absolute',
+        right: -8,
+        top: -8,
+        backgroundColor: '#FF6B6B',
+        borderRadius: 10,
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+    },
+    photoCountText: {
+        color: '#fff',
+        fontSize: 12,
+        fontFamily: 'Montserrat-Bold',
+    },
+    removeButton: {
+        position: 'absolute',
+        top: -5,
+        right: -5,
+        zIndex: 1,
+        backgroundColor: '#FF6B6B',
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    removeButtonText: {
+        color: 'white',
+        fontSize: 16,
+        lineHeight: 18,
+        fontWeight: 'bold',
+    },
+    attachmentButton: {
+        backgroundColor: '#4ECDC4',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 15,
+        borderRadius: 8,
+        gap: 10,
+        marginTop: 20,
+    },
+    attachmentButtonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontFamily: 'Montserrat-Medium',
     },
 });
 
