@@ -8,7 +8,7 @@ import HomeScreen from '../screens/HomeScreen';
 import TasksScreen from '../screens/tasks/TasksScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
 import AddTaskScreen from '../screens/tasks/AddTaskScreen';
-
+import Messages from '../screens/Messages';
 
 const Tab = createBottomTabNavigator();
 
@@ -62,7 +62,7 @@ const BottomMenuNavigation = () => {
           ),
         }}
       />
-      <Tab.Screen name="Chat" component={TasksScreen} />
+      <Tab.Screen name="Chat" component={Messages} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
