@@ -16,6 +16,21 @@ export interface UserDetail {
     data: UserDetailData[];
 }
 
+
+export interface User {
+    id: number;
+    name: string;
+    email: string;
+    profile_image: string;
+}
+
+export interface UsersResponse {
+    status: boolean;
+    data: User[];
+}
+
+
+
 export interface UpdateUserData {
     name: string;
     email: string;

@@ -1,5 +1,5 @@
 import axiosInstance from '../config/axios';
-import { UserDetail, UpdateUserData, UpdateUserResponse } from '../types/userTypes';
+import { UserDetail, UpdateUserData, UpdateUserResponse, UsersResponse } from '../types/userTypes';
 import * as ImagePicker from 'expo-image-picker';
 
 export const getUserDetail = async (): Promise<UserDetail> => {
@@ -11,18 +11,6 @@ export const getUserDetail = async (): Promise<UserDetail> => {
         throw error;
     }
 };
-
-interface User {
-    id: number;
-    name: string;
-    email: string;
-    profile_image: string;
-}
-
-interface UsersResponse {
-    status: boolean;
-    data: User[];
-}
 
 export const getAllUsers = async (): Promise<UsersResponse> => {
     const response = await axiosInstance.get<UsersResponse>('/getAllUsers');
